@@ -797,6 +797,7 @@ public class KoLmafiaCLI
 		new LogEchoCommand().register( "logecho" ).register( "logprint" );
 		new LoginCommand().register( "login" );
 		new LogoutCommand().register( "logout" );
+		new LuaSingleLineCommand().register( "lua" ).register( "luaq" );
 		new MacroTestCommand().register( "macrotest" );
 		new MallRepriceCommand().register( "reprice" ).register( "undercut" );
 		new MallSellCommand().register( "mallsell" );
@@ -1007,6 +1008,7 @@ public class KoLmafiaCLI
 			findScriptFile( filename + ".ash", matches );
 			findScriptFile( filename + ".cli", matches );
 			findScriptFile( filename + ".txt", matches );
+			findScriptFile( filename + ".lua", matches );
 		}
 
 		return matches;

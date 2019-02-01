@@ -173,6 +173,7 @@ public abstract class KoLmafia
 		System.setProperty( "com.apple.mrj.application.live-resize", "true" );
 		System.setProperty( "com.apple.mrj.application.growbox.intrudes", "false" );
 		System.setProperty( "java.net.preferIPv4Stack", "true" );
+		System.setProperty( "luaj.package.path", KoLConstants.SCRIPT_LOCATION.getAbsolutePath() + "/?.lua" );
 
 		if ( SwinglessUIUtils.isSwingAvailable() )
 		{

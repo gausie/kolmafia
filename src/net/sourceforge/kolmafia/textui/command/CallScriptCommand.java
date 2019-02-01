@@ -53,6 +53,7 @@ import net.sourceforge.kolmafia.preferences.Preferences;
 import net.sourceforge.kolmafia.swingui.GenericFrame;
 
 import net.sourceforge.kolmafia.textui.Interpreter;
+import net.sourceforge.kolmafia.textui.LuaInterpreter;
 import net.sourceforge.kolmafia.textui.Profiler;
 
 import net.sourceforge.kolmafia.textui.parsetree.Value;
@@ -83,6 +84,7 @@ public class CallScriptCommand
 			String[] arguments = null;
 
 			parameters = parameters.trim();
+
 			List<File> scriptMatches = KoLmafiaCLI.findScriptFile( parameters );
 
 			// If still no script was found, perhaps it's the
@@ -135,7 +137,7 @@ public class CallScriptCommand
 					{
 						arguments = new String[] { argumentString };
 					}
-					
+
 					parameters = parameters.substring( 0, spaceIndex );
 					scriptMatches = KoLmafiaCLI.findScriptFile( parameters );
 				}
@@ -155,7 +157,7 @@ public class CallScriptCommand
 				}
 				return;
 			}
-			
+
 			// If we have multiple matches, punt here.
 
 			if ( scriptMatches.size() > 1 )
@@ -187,6 +189,12 @@ public class CallScriptCommand
 				// Add name, without path, to MRU list
 				KoLConstants.scriptMList.addItem( scriptFile.getName() );
 				GenericFrame.compileScripts( true );
+			}
+
+			if ( scriptFile.getPath().endsWith( ".lua" ) )
+			{
+				LuaInterpreter.execute(scriptFile);
+				return;
 			}
 
 			// Allow the ".ash" to appear anywhere in the filename

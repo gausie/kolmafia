@@ -105,6 +105,11 @@ public class AggregateType
 	{
 		return this.size;
 	}
+	
+	public boolean getCaseInsensitive()
+	{
+		return this.caseInsensitive;
+	}
 
 	public void setSize( final int size )
 	{

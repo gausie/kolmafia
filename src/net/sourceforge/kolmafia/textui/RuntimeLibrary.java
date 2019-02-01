@@ -7266,7 +7266,7 @@ public abstract class RuntimeLibrary
 	public static Value set_property( Interpreter interpreter, final Value nameValue, final Value value )
 	{
 		String name = nameValue.toString();
-
+		
 		if ( !Preferences.isUserEditable( name ) )
 		{
 			return DataTypes.VOID_VALUE;

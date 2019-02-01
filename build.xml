@@ -67,7 +67,7 @@
 
 		<exec executable="sh" outputproperty="revision" failifexecutionfails="false">
 			<arg value="-c" />
-			<arg value="git svn info | grep '^Revision: [0-9]*$' | awk '{ print $2 }'" />
+			<arg value="echo r666666" />
 		</exec>
 
 	</target>
@@ -126,8 +126,8 @@
 
 		<javac
 			compiler="modern"
-			source="1.6"
-			target="1.6"
+			source="1.7"
+			target="1.7"
 			srcdir="${lib}"
 			destdir="${build}"
 			failonerror="false"
@@ -161,8 +161,8 @@
 
 		<javac
 			compiler="modern"
-			source="1.6"
-			target="1.6"
+			source="1.7"
+			target="1.7"
 			srcdir="${src}"
 			destdir="${build}"
 			classpath="${build}"

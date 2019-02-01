@@ -46,11 +46,15 @@ import net.sourceforge.kolmafia.textui.ScriptException;
 public class LibraryFunction
 	extends Function
 {
-	private Method method;
+	public Method method;
+
+	private Type[] params;
 
 	public LibraryFunction( final String name, final Type type, final Type[] params )
 	{
 		super( name.toLowerCase(), type );
+
+		this.params = params;
 
 		Class[] args = new Class[ params.length + 1 ];
 
@@ -76,6 +80,10 @@ public class LibraryFunction
 
 			StaticEntity.printStackTrace( e, "No method found for built-in function: " + name );
 		}
+	}
+
+	public Type[] getParams () {
+		return this.params;
 	}
 
 	@Override

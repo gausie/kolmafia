@@ -262,6 +262,12 @@ public class RequestLogger
 		RequestLogger.printLine( line );
 	}
 
+	@Override
+	public void print( final String line )
+	{
+		RequestLogger.printLine( line );
+	}
+	
 	public static final void printList( final List printing, final PrintStream ostream )
 	{
 		if ( printing == null || ostream == null )
