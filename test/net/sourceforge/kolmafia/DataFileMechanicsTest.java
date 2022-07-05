@@ -6,8 +6,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
+import net.sourceforge.kolmafia.persistence.ItemDatabase;
 import net.sourceforge.kolmafia.utilities.FileUtilities;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,7 +23,7 @@ public class DataFileMechanicsTest {
   // content.  It is possible that an error would remain undetected in files where the low and high
   // counts are not the same.
 
-  public static Stream<Arguments> data() {
+  public static Stream<Arguments> dataFiles() {
     return Stream.of(
         // file name, version number, low field count, high field count
         Arguments.of("adventures.txt", 6, 4, 5),
@@ -79,7 +83,7 @@ public class DataFileMechanicsTest {
   }
 
   @ParameterizedTest
-  @MethodSource("data")
+  @MethodSource("dataFiles")
   public void testDataFileFieldCounts(String fname, int version, int lowCount, int highCount) {
     // If the precheck fails then the parameters in this test file are wrong and this file needs
     // to be edited.
@@ -102,5 +106,91 @@ public class DataFileMechanicsTest {
     } catch (IOException e) {
       fail("Exception in tearing down reader:" + e.toString());
     }
+  }
+
+  private List<String> equipmentSections = List.of("hat", "pants");
+
+  @Test
+  public void testModifiersLayout() throws IOException {
+    var errors = new ArrayList<String>();
+
+    try (var reader =
+        FileUtilities.getVersionedReader("modifiers.txt", KoLConstants.MODIFIERS_VERSION)) {
+      String line;
+
+      String section = "version";
+
+      String commentAbout = null;
+
+      String lastThing = "";
+
+      assertThat(reader, notNullValue());
+
+      int lineNumber = 0;
+      while ((line = reader.readLine()) != null) {
+        lineNumber++;
+        if (line.length() == 0) continue;
+
+        if (section.equals("version")) {
+          section = "header";
+          continue;
+        }
+
+        if (section.equals("header")) {
+          section = line.startsWith("# Hats") ? "hat" : section;
+          continue;
+        }
+
+        // Could be a comment about the next entity
+        if (line.startsWith("#")) {
+          if (line.endsWith(" section of modifiers.txt")) {
+            lastThing = "";
+            section = line.substring(2, line.indexOf(" section") - 1).toLowerCase();
+          } else {
+            int colon = line.indexOf(": ");
+            if (colon < 0) {
+              errors.add("Line " + lineNumber + ": Incorrectly formatted modifier comment");
+            }
+          }
+          continue;
+        }
+
+        String[] data = line.split("\t", -1);
+
+        String realName =
+            data[0]
+                + " "
+                + ((data[1].startsWith("[") && !data[1].endsWith("]"))
+                    ? data[1].substring(data[1].indexOf("]") + 1)
+                    : data[1]);
+        // Check order
+        if (lastThing.compareToIgnoreCase(realName) > 0) {
+          errors.add(
+              "Line " + lineNumber + ": Wrong order, " + lastThing + " comes after " + realName);
+        }
+
+        lastThing = realName;
+
+        // Check section
+        if (data[0].equals("Item") && equipmentSections.contains(section)) {
+          int itemId = ItemDatabase.getItemId(data[1]);
+          int type = ItemDatabase.getConsumptionType(itemId);
+          String primary = ItemDatabase.typeToPrimaryUsage(type);
+          if (!primary.equals(section)) {
+            errors.add(
+                "Line "
+                    + lineNumber
+                    + ": "
+                    + data[1]
+                    + " should be in "
+                    + primary
+                    + " section instead of "
+                    + section);
+          }
+        }
+      }
+    }
+
+    assertThat(String.join("\n", errors), errors, hasSize(0));
   }
 }
