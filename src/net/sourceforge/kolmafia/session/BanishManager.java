@@ -199,8 +199,8 @@ public class BanishManager {
         case COSMIC_BOWLING_BALL_RESET:
           return Preferences.getInteger("cosmicBowlingBallReturnCombats") > 0;
         case SPRING_LOADED_BUMPER_RESET:
-          return KoLCharacter.getTurnsPlayed()
-              > 30 + Preferences.getInteger("_lastSpringLoadedBumperUse");
+          return KoLCharacter.getCurrentRun()
+              < 30 + Preferences.getInteger("_lastSpringLoadedBumperUse");
         default:
           return true;
       }
@@ -227,7 +227,7 @@ public class BanishManager {
         case SPRING_LOADED_BUMPER_RESET:
           return "Until Bumper is ready ("
               + (30
-                  - (KoLCharacter.getTurnsPlayed()
+                  - (KoLCharacter.getCurrentRun()
                       - Preferences.getInteger("_lastSpringLoadedBumperUse")))
               + " turns) or Until Rollover";
         default:

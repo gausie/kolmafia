@@ -1,15 +1,18 @@
 package net.sourceforge.kolmafia.session;
 
 import static internal.helpers.Networking.html;
+import static internal.helpers.Player.setProperty;
 import static internal.helpers.Preference.isSetTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 
+import internal.helpers.Cleanups;
 import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.MonsterData;
 import net.sourceforge.kolmafia.combat.MonsterStatusTracker;
@@ -38,16 +41,19 @@ class BanishManagerTest {
     BanishManager.clearCache();
   }
 
-  private static MonsterData CRATE = MonsterDatabase.findMonster("crate");
-  private static MonsterData FLUFFY_BUNNY = MonsterDatabase.findMonster("fluffy bunny");
-  private static MonsterData PYGMY_WITCH_LAWYER = MonsterDatabase.findMonster("pygmy witch lawyer");
-  private static MonsterData SCARY_PIRATE = MonsterDatabase.findMonster("scary pirate");
-  private static MonsterData SMUT_ORC_NAILER = MonsterDatabase.findMonster("smut orc nailer");
-  private static MonsterData SPOOKY_MUMMY = MonsterDatabase.findMonster("spooky mummy");
-  private static MonsterData SURPRISED_MARIACHI = MonsterDatabase.findMonster("surprised mariachi");
-  private static MonsterData TAN_GNAT = MonsterDatabase.findMonster("Tan Gnat");
-  private static MonsterData TACO_CAT = MonsterDatabase.findMonster("Taco Cat");
-  private static MonsterData MAGICAL_FRUIT_BAT = MonsterDatabase.findMonster("magical fruit bat");
+  private static final MonsterData CRATE = MonsterDatabase.findMonster("crate");
+  private static final MonsterData FLUFFY_BUNNY = MonsterDatabase.findMonster("fluffy bunny");
+  private static final MonsterData PYGMY_WITCH_LAWYER =
+      MonsterDatabase.findMonster("pygmy witch lawyer");
+  private static final MonsterData SCARY_PIRATE = MonsterDatabase.findMonster("scary pirate");
+  private static final MonsterData SMUT_ORC_NAILER = MonsterDatabase.findMonster("smut orc nailer");
+  private static final MonsterData SPOOKY_MUMMY = MonsterDatabase.findMonster("spooky mummy");
+  private static final MonsterData SURPRISED_MARIACHI =
+      MonsterDatabase.findMonster("surprised mariachi");
+  private static final MonsterData TAN_GNAT = MonsterDatabase.findMonster("Tan Gnat");
+  private static final MonsterData TACO_CAT = MonsterDatabase.findMonster("Taco Cat");
+  private static final MonsterData MAGICAL_FRUIT_BAT =
+      MonsterDatabase.findMonster("magical fruit bat");
 
   @Test
   void clearCache() {
@@ -180,7 +186,7 @@ class BanishManagerTest {
     KoLCharacter.setCurrentRun(128);
     Preferences.setString(
         "banishedMonsters",
-        "spooky vampire:ice house:20:smut orc nailer:banishing shout:115:gingerbread lawyer:snokebomb:118:unhinged survivor:Feel Hatred:119:grizzled survivor:Reflex Hammer:119:cat-alien:mafia middle finger ring:119:alielf:batter up!:119:whiny survivor:stinky cheese eye:119:crate:louder than bomb:119:fluffy bunny:Be a Mind Master:119:paper towelgeist:divine champagne popper:128:Taco Cat:Bowl a Curveball:124:albino bat:Spring-Loaded Front Bumper:118");
+        "spooky vampire:ice house:20:smut orc nailer:banishing shout:115:gingerbread lawyer:snokebomb:118:unhinged survivor:Feel Hatred:119:grizzled survivor:Reflex Hammer:119:cat-alien:mafia middle finger ring:119:alielf:batter up!:119:whiny survivor:stinky cheese eye:119:crate:louder than bomb:119:fluffy bunny:Be a Mind Master:119:paper towelgeist:divine champagne popper:128:albino bat:Spring-Loaded Front Bumper:118");
     BanishManager.loadBanishedMonsters();
 
     BanishManager.resetSpringLoadedBumper();
@@ -188,7 +194,7 @@ class BanishManagerTest {
     assertThat(
         "banishedMonsters",
         isSetTo(
-            "spooky vampire:ice house:20:smut orc nailer:banishing shout:115:gingerbread lawyer:snokebomb:118:unhinged survivor:Feel Hatred:119:grizzled survivor:Reflex Hammer:119:cat-alien:mafia middle finger ring:119:alielf:batter up!:119:whiny survivor:stinky cheese eye:119:crate:louder than bomb:119:fluffy bunny:Be a Mind Master:119:paper towelgeist:divine champagne popper:128:Taco Cat:Bowl a Curveball:124"));
+            "spooky vampire:ice house:20:smut orc nailer:banishing shout:115:gingerbread lawyer:snokebomb:118:unhinged survivor:Feel Hatred:119:grizzled survivor:Reflex Hammer:119:cat-alien:mafia middle finger ring:119:alielf:batter up!:119:whiny survivor:stinky cheese eye:119:crate:louder than bomb:119:fluffy bunny:Be a Mind Master:119:paper towelgeist:divine champagne popper:128"));
   }
 
   @Test
@@ -425,19 +431,20 @@ class BanishManagerTest {
     assertEquals("Perceiver of Sensations", ice);
   }
 
+  // There are too many things being tested in this test, please don't add any more cases here
+  // and instead make a new test
   @Test
   void getBanishData() {
     KoLCharacter.setCurrentRun(128);
     Preferences.setInteger("cosmicBowlingBallReturnCombats", 16);
-    Preferennces.setInteger("_lastSpringLoadedBumperUse", 118);
     Preferences.setString(
         "banishedMonsters",
-        "spooky vampire:ice house:20:smut orc nailer:banishing shout:115:gingerbread lawyer:snokebomb:118:unhinged survivor:Feel Hatred:119:grizzled survivor:Reflex Hammer:119:cat-alien:mafia middle finger ring:119:alielf:batter up!:119:whiny survivor:stinky cheese eye:119:crate:louder than bomb:119:fluffy bunny:Be a Mind Master:119:paper towelgeist:divine champagne popper:128:Taco Cat:Bowl a Curveball:124:albino bat:Spring-Loaded Front Bumper:118");
+        "spooky vampire:ice house:20:smut orc nailer:banishing shout:115:gingerbread lawyer:snokebomb:118:unhinged survivor:Feel Hatred:119:grizzled survivor:Reflex Hammer:119:cat-alien:mafia middle finger ring:119:alielf:batter up!:119:whiny survivor:stinky cheese eye:119:crate:louder than bomb:119:fluffy bunny:Be a Mind Master:119:paper towelgeist:divine champagne popper:128:Taco Cat:Bowl a Curveball:124");
     BanishManager.loadBanishedMonsters();
 
     var data = BanishManager.getBanishData();
 
-    assertThat(data, arrayWithSize(13));
+    assertThat(data, arrayWithSize(12));
     assertThat(
         data,
         arrayContaining(
@@ -456,12 +463,34 @@ class BanishManagerTest {
                 "Taco Cat",
                 "Bowl a Curveball",
                 "124",
-                "Until Ball returns (16 combats) or Until Rollover"),
-            arrayContaining(
-                "albino bat",
-                "Spring-Loaded Front Bumper",
-                "118",
-                "Until Bumper is ready (20 turns) or Until Rollover")));
+                "Until Ball returns (16 combats) or Until Rollover")));
+  }
+
+  @Test
+  void getBanishDataWithSpringLoadedFrontBumper() {
+    KoLCharacter.setCurrentRun(128);
+    var cleanups =
+        new Cleanups(
+            setProperty(
+                "banishedMonsters",
+                "gingerbread lawyer:snokebomb:118:albino bat:Spring-Loaded Front Bumper:118"),
+            setProperty("_lastSpringLoadedBumperUse", 118));
+
+    try (cleanups) {
+      BanishManager.loadBanishedMonsters();
+
+      var data = BanishManager.getBanishData();
+
+      assertThat(data, arrayWithSize(2));
+      assertThat(
+          data,
+          hasItemInArray(
+              arrayContaining(
+                  "albino bat",
+                  "Spring-Loaded Front Bumper",
+                  "118",
+                  "Until Bumper is ready (20 turns) or Until Rollover")));
+    }
   }
 
   @Test
@@ -472,6 +501,6 @@ class BanishManagerTest {
 
     var data = BanishManager.getBanishData();
 
-    assertEquals(0, data.length);
+    assertThat(data, arrayWithSize(0));
   }
 }
