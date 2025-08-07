@@ -305,4 +305,12 @@ public abstract class KoLmafiaASH {
       }
     }
   }
+
+  public static void dispatchEvent(final String event) {
+    for (ScriptRuntime interpreter : KoLmafiaASH.INTERPRETERS.values()) {
+      if (interpreter instanceof JavascriptRuntime jsRuntime) {
+        jsRuntime.dispatchEvent(event);
+      }
+    }
+  }
 }

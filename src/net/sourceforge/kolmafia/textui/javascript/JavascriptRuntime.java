@@ -62,6 +62,12 @@ public class JavascriptRuntime extends AbstractRuntime {
   private Scriptable currentTopScope = null;
   private Scriptable currentStdLib = null;
 
+  private final EventEmitter eventEmitter = new EventEmitter();
+
+  public void dispatchEvent(final String event) {
+    this.eventEmitter.dispatchEvent(currentTopScope, event);
+  }
+
   public static void clearSessionStorage() {
     storedSessions.clear();
   }
@@ -151,22 +157,29 @@ public class JavascriptRuntime extends AbstractRuntime {
       }
     }
 
-    // Initialise sessionStorage
+    // Add custom members to the stdLib.
+    var wrapFactory = cx.getWrapFactory();
+    wrapFactory.setJavaPrimitiveWrap(false);
+
     // Storage is sandboxed per script file. CLI scripts share a session.
     var storage =
         storedSessions.computeIfAbsent(
             scriptFile == null ? null : scriptFile.getAbsolutePath(), k -> new Storage());
-
-    var wrapFactory = cx.getWrapFactory();
-    wrapFactory.setJavaPrimitiveWrap(false);
-    var jsObject = (NativeJavaObject) wrapFactory.wrap(cx, scope, storage, null);
+    var jsStorage = (NativeJavaObject) wrapFactory.wrap(cx, scope, storage, null);
     ScriptableObject.defineProperty(
-        stdLib, "sessionStorage", jsObject, DONTENUM | READONLY | PERMANENT);
+        stdLib, "sessionStorage", jsStorage, DONTENUM | READONLY | PERMANENT);
+
+    // EventEmitter is one per runtime
+    var jsEventEmitter = (NativeJavaObject) wrapFactory.wrap(cx, scope, this.eventEmitter, null);
+    ScriptableObject.defineProperty(
+        stdLib, "kolmafiaLifecycle", jsEventEmitter, DONTENUM | READONLY | PERMANENT);
 
     if (addToTopScope) {
-      ScriptableObject.defineProperty(scope, "sessionStorage", jsObject, DONTENUM);
+      ScriptableObject.defineProperty(scope, "sessionStorage", jsStorage, DONTENUM);
+      ScriptableObject.defineProperty(scope, "kolmafiaLifecycle", jsEventEmitter, DONTENUM);
     }
 
+    // Attach the stdLib to the scope
     ScriptableObject.defineProperty(
         scope, DEFAULT_RUNTIME_LIBRARY_NAME, stdLib, DONTENUM | READONLY | PERMANENT);
     return stdLib;

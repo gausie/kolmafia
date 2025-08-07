@@ -286,6 +286,8 @@ public abstract class ChoiceManager {
         }
       }
 
+      KoLmafiaASH.dispatchEvent("choiceAdventure");
+
       // Either no choiceAdventure script or it left us in the same choice.
       if (!ChoiceManager.automateChoice(choice, request, stepCount)) {
         return;
