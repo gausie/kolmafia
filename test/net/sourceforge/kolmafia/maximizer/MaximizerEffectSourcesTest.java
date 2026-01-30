@@ -349,7 +349,8 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh")))));
+        assertThat(
+            getBoosts(), not(hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh")))));
       }
     }
 
@@ -359,7 +360,8 @@ public class MaximizerEffectSourcesTest {
           new Cleanups(withProperty("_sourceTerminalEnhanceUses", 0), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh")))));
+        assertThat(
+            getBoosts(), not(hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh")))));
       }
     }
   }
@@ -375,7 +377,8 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("meat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("asdonmartin drive observantly"))));
+        assertThat(
+            getBoosts(), hasItem(hasProperty("cmd", equalTo("asdonmartin drive observantly"))));
       }
     }
 
