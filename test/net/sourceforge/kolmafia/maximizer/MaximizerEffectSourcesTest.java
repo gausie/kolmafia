@@ -21,6 +21,7 @@ import static internal.helpers.Player.withStats;
 import static internal.helpers.Player.withWorkshedItem;
 import static internal.matchers.Maximizer.recommendsSlot;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.not;
@@ -57,7 +58,7 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Horsery {
     @Test
-    public void suggestsHorseryWhenAvailable() {
+    public void suggestsDarkHorseForNegativeCombat() {
       var cleanups =
           new Cleanups(
               withProperty("horseryAvailable", true),
@@ -65,12 +66,12 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("-combat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("horsery dark"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("horsery dark horse"))));
       }
     }
 
     @Test
-    public void doesNotSuggestHorseryWhenNoMeatToSwitch() {
+    public void doesNotSuggestDarkHorseWhenNoMeatToSwitch() {
       var cleanups =
           new Cleanups(
               withProperty("horseryAvailable", true),
@@ -79,7 +80,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("-combat"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("horsery dark")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("horsery dark horse")))));
       }
     }
 
@@ -105,7 +106,9 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("meat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("boombox"))));
+        assertThat(
+            getBoosts(),
+            hasItem(hasProperty("cmd", equalTo("boombox total eclipse of your meat"))));
       }
     }
 
@@ -139,16 +142,7 @@ public class MaximizerEffectSourcesTest {
       var cleanups = new Cleanups(withSign(ZodiacSign.MONGOOSE), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("ml"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mcd"))));
-      }
-    }
-
-    @Test
-    public void suggestsCanadianMCDWhenInCanadia() {
-      var cleanups = new Cleanups(withSign(ZodiacSign.WALLABY), withStats(100, 100, 100));
-      try (cleanups) {
-        assertTrue(maximize("ml"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mcd"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("mcd 10"))));
       }
     }
   }
@@ -166,7 +160,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("weapon damage percent"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("pool"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("pool 1"))));
       }
     }
 
@@ -197,7 +191,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Shower effects give Experience Percent bonuses (mys exp percent, not mys exp)
         assertTrue(maximize("mys exp percent"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("shower"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("shower lukewarm"))));
       }
     }
 
@@ -227,7 +221,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("init"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("swim"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("swim laps"))));
       }
     }
 
@@ -242,7 +236,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("fortune"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("fortune buff gunther"))));
       }
     }
 
@@ -258,7 +252,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Wild and Westy provides +50 initiative
         assertTrue(maximize("init"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("photobooth"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("photobooth effect wild"))));
       }
     }
 
@@ -307,7 +301,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("terminal enhance"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh"))));
       }
     }
 
@@ -324,7 +318,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("terminal enhance"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh"))));
       }
     }
 
@@ -340,7 +334,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("terminal enhance"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh"))));
       }
     }
 
@@ -355,7 +349,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("terminal enhance")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh")))));
       }
     }
 
@@ -365,7 +359,7 @@ public class MaximizerEffectSourcesTest {
           new Cleanups(withProperty("_sourceTerminalEnhanceUses", 0), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("terminal enhance")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("terminal enhance items.enh")))));
       }
     }
   }
@@ -381,7 +375,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("meat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("asdonmartin drive"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("asdonmartin drive observantly"))));
       }
     }
 
@@ -412,7 +406,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Force of Mayo Be With You provides resistances
         assertTrue(maximize("hot res"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mayosoak"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("mayosoak"))));
       }
     }
 
@@ -426,7 +420,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("hot res"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("mayosoak")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("mayosoak")))));
       }
     }
   }
@@ -444,7 +438,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Puzzle Champ provides Familiar Weight
         assertTrue(maximize("familiar weight"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("witchess"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("witchess"))));
       }
     }
 
@@ -458,7 +452,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("familiar weight"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("witchess")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("witchess")))));
       }
     }
 
@@ -472,7 +466,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("familiar weight"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("witchess")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("witchess")))));
       }
     }
   }
@@ -489,7 +483,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Use "cold res" to target beach head effect rather than comb as equip
         assertTrue(maximize("cold res"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("beach head"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("beach head Cold as Nice"))));
       }
     }
 
@@ -503,7 +497,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Use "cold res" to target beach head effect rather than comb as equip
         assertTrue(maximize("cold res"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("beach head"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("beach head Cold as Nice"))));
       }
     }
 
@@ -533,7 +527,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Grim effects: init, hpmp, damage - use init
         assertTrue(maximize("init"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("grim"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("grim init"))));
       }
     }
 
@@ -562,7 +556,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("play"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("play XI - Strength"))));
       }
     }
 
@@ -592,7 +586,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Total Protonic Reversal gives stat percents, not resistances
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("crossstreams"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("crossstreams"))));
       }
     }
 
@@ -605,7 +599,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("crossstreams")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("crossstreams")))));
       }
     }
   }
@@ -613,21 +607,21 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Monorail {
     @Test
-    public void suggestsMonorailWhenAvailable() {
+    public void suggestsMonorailBuffWhenAvailable() {
       var cleanups = new Cleanups(withProperty("_lyleFavored", false), withStats(100, 100, 100));
       try (cleanups) {
         // Favored by Lyle provides Muscle/Mysticality/Moxie Percent, not init
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("monorail"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("monorail buff"))));
       }
     }
 
     @Test
-    public void doesNotSuggestMonorailWhenUsed() {
+    public void doesNotSuggestMonorailBuffWhenUsed() {
       var cleanups = new Cleanups(withProperty("_lyleFavored", true), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("monorail")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("monorail buff")))));
       }
     }
   }
@@ -643,7 +637,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("daycare"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("daycare muscle"))));
       }
     }
 
@@ -657,7 +651,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("daycare"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("daycare muscle"))));
       }
     }
 
@@ -670,7 +664,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("daycare")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("daycare muscle")))));
       }
     }
   }
@@ -687,7 +681,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Super Speed gives Moxie Percent +100
         assertTrue(maximize("mox"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("gap"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("gap speed"))));
       }
     }
 
@@ -700,7 +694,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mox"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("gap")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("gap speed")))));
       }
     }
 
@@ -713,7 +707,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mox"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("gap")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("gap speed")))));
       }
     }
   }
@@ -730,7 +724,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Cloud-Talk gives Experience Percent, not Adventures
         assertTrue(maximize("exp"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("campaway cloud"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("campaway cloud"))));
       }
     }
 
@@ -743,7 +737,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("exp"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("campaway cloud")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("campaway cloud")))));
       }
     }
   }
@@ -834,7 +828,7 @@ public class MaximizerEffectSourcesTest {
         KoLCharacter.setTelescopeUpgrades(5);
         // Starry-Eyed provides Muscle/Mys/Moxie Percent, not flat stats
         assertTrue(maximize("mus percent"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("telescope"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("telescope look high"))));
       }
     }
 
@@ -849,7 +843,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         KoLCharacter.setTelescopeUpgrades(5);
         assertTrue(maximize("mus percent"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("telescope")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("telescope look high")))));
       }
     }
 
@@ -864,7 +858,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         KoLCharacter.setTelescopeUpgrades(0);
         assertTrue(maximize("mus percent"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("telescope")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("telescope look high")))));
       }
     }
   }
@@ -879,7 +873,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Having a Ball! provides stat percent bonuses
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("ballpit"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("ballpit"))));
       }
     }
 
@@ -890,7 +884,7 @@ public class MaximizerEffectSourcesTest {
               withProperty("_ballpit", true), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("ballpit")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("ballpit")))));
       }
     }
   }
@@ -898,24 +892,24 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Jukebox {
     @Test
-    public void suggestsJukeboxWhenAvailableAndCanInteract() {
+    public void suggestsJukeboxMeatWhenAvailableAndCanInteract() {
       var cleanups =
           new Cleanups(
               withProperty("_jukebox", false), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("meat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("jukebox"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("jukebox meat"))));
       }
     }
 
     @Test
-    public void doesNotSuggestJukeboxWhenUsed() {
+    public void doesNotSuggestJukeboxMeatWhenUsed() {
       var cleanups =
           new Cleanups(
               withProperty("_jukebox", true), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("meat"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("jukebox")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("jukebox meat")))));
       }
     }
   }
@@ -923,7 +917,7 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Friars {
     @Test
-    public void suggestsFriarsWhenUnlockedAndAvailable() {
+    public void suggestsFriarsFoodWhenUnlockedAndAvailable() {
       var cleanups =
           new Cleanups(
               withRestricted(false),
@@ -934,12 +928,12 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Brother Flying Burrito's Blessing provides Food Drop +30
         assertTrue(maximize("food drop"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("friars"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("friars food"))));
       }
     }
 
     @Test
-    public void doesNotSuggestFriarsWhenUsed() {
+    public void doesNotSuggestFriarsFoodWhenUsed() {
       var cleanups =
           new Cleanups(
               withRestricted(false),
@@ -949,12 +943,12 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("food drop"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("friars")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("friars food")))));
       }
     }
 
     @Test
-    public void doesNotSuggestFriarsWhenNotUnlocked() {
+    public void doesNotSuggestFriarsFoodWhenNotUnlocked() {
       var cleanups =
           new Cleanups(
               withRestricted(false),
@@ -964,7 +958,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("food drop"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("friars")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("friars food")))));
       }
     }
   }
@@ -972,7 +966,7 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class BarrelShrine {
     @Test
-    public void suggestsBarrelPrayerWhenAvailable() {
+    public void suggestsBarrelPrayerBuffWhenAvailable() {
       var cleanups =
           new Cleanups(
               withClass(AscensionClass.SEAL_CLUBBER),
@@ -983,12 +977,12 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Barrel Chested provides Weapon Damage Percent +150 (only for Seal Clubbers)
         assertTrue(maximize("weapon damage percent"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("barrelprayer"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("barrelprayer buff"))));
       }
     }
 
     @Test
-    public void doesNotSuggestBarrelPrayerWhenUsed() {
+    public void doesNotSuggestBarrelPrayerBuffWhenUsed() {
       var cleanups =
           new Cleanups(
               withClass(AscensionClass.SEAL_CLUBBER),
@@ -998,7 +992,7 @@ public class MaximizerEffectSourcesTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("weapon damage percent"));
-        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("barrelprayer")))));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", equalTo("barrelprayer buff")))));
       }
     }
   }
@@ -1016,7 +1010,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Hulkien provides stat percents, Rainbowolin provides resistances
         assertTrue(maximize("mus percent"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("pillkeeper"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("pillkeeper stat"))));
       }
     }
 
@@ -1031,7 +1025,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Hulkien provides stat percents
         assertTrue(maximize("mus percent"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("pillkeeper"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("pillkeeper stat"))));
       }
     }
   }
@@ -1078,7 +1072,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Materiel Intel provides Item Drop +100
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("alliedradio effect"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("alliedradio effect intel"))));
       }
     }
 
@@ -1093,7 +1087,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Materiel Intel provides Item Drop +100
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("alliedradio effect"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("alliedradio effect intel"))));
       }
     }
   }
@@ -1122,7 +1116,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Apriling Band Celebration Bop provides Food Drop +50
         assertTrue(maximize("food drop"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("aprilband"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("aprilband effect drop"))));
       }
     }
   }
@@ -1137,7 +1131,9 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Memories of Cheesier Age provides Food Drop +100
         assertTrue(maximize("food drop"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mayam"))));
+        assertThat(
+            getBoosts(),
+            hasItem(hasProperty("cmd", equalTo("mayam resonance memories of cheesier age"))));
       }
     }
   }
@@ -1151,7 +1147,9 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Intensely interested gives +5 combat, toggle to get -5 combat
         assertTrue(maximize("-combat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("toggle"))));
+        assertThat(
+            getBoosts(),
+            hasItem(hasProperty("cmd", equalTo("toggle Become Intensely interested"))));
       }
     }
 
@@ -1162,7 +1160,9 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Superficially interested gives -5 combat, toggle to get +5 combat
         assertTrue(maximize("combat"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("toggle"))));
+        assertThat(
+            getBoosts(),
+            hasItem(hasProperty("cmd", equalTo("toggle Become Superficially interested"))));
       }
     }
 
@@ -1229,7 +1229,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Rainbow Vaccine provides elemental resistances
         assertTrue(maximize("cold res"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("spacegate"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("spacegate vaccine 1"))));
       }
     }
 
@@ -1245,7 +1245,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Broad-Spectrum Vaccine provides stat percents
         assertTrue(maximize("mus"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("spacegate"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("spacegate vaccine 2"))));
       }
     }
 
@@ -1273,7 +1273,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Spitting Rhymes provides Item Drop: +50
         assertTrue(maximize("item"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("loathingidol"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("loathingidol rhyme"))));
       }
     }
   }
@@ -1286,7 +1286,7 @@ public class MaximizerEffectSourcesTest {
       try (cleanups) {
         // Skeletal Buddy provides Experience: +2
         assertTrue(maximize("exp"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("skeleton"))));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("skeleton buddy"))));
       }
     }
   }
