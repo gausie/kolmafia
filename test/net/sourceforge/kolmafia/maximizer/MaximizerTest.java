@@ -2876,6 +2876,352 @@ public class MaximizerTest {
         assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
       }
     }
+
+    @Nested
+    class BadMoonPath {
+      @Test
+      public void badMoonStyxAvailableWhenNotUsed() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.BAD_MOON),
+                withSign(ZodiacSign.BAD_MOON),
+                withProperty("styxPixieVisited", false),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("styx"))));
+        }
+      }
+
+      @Test
+      public void badMoonStyxNotAvailableWhenUsed() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.BAD_MOON),
+                withSign(ZodiacSign.BAD_MOON),
+                withProperty("styxPixieVisited", true),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("styx")))));
+        }
+      }
+
+      @Test
+      public void badMoonRestrictsVIPPoolTable() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.BAD_MOON),
+                withSign(ZodiacSign.BAD_MOON),
+                withItem(ItemPool.VIP_LOUNGE_KEY),
+                withProperty("_poolGames", 0),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("pool")))));
+        }
+      }
+
+      @Test
+      public void badMoonRestrictsShower() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.BAD_MOON),
+                withSign(ZodiacSign.BAD_MOON),
+                withItem(ItemPool.VIP_LOUNGE_KEY),
+                withProperty("_aprilShower", false),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("shower")))));
+        }
+      }
+    }
+
+    @Nested
+    class NuclearAutumnPath {
+      @Test
+      public void nuclearAutumnSpaAvailable() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.NUCLEAR_AUTUMN),
+                withProperty("falloutShelterLevel", 3),
+                withProperty("_falloutShelterSpaUsed", false),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("campground vault3"))));
+        }
+      }
+
+      @Test
+      public void nuclearAutumnSpaNotAvailableWhenUsed() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.NUCLEAR_AUTUMN),
+                withProperty("falloutShelterLevel", 3),
+                withProperty("_falloutShelterSpaUsed", true),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(
+              getBoosts(), not(hasItem(hasProperty("cmd", startsWith("campground vault3")))));
+        }
+      }
+
+      @Test
+      public void nuclearAutumnSpaRequiresLevel3() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.NUCLEAR_AUTUMN),
+                withProperty("falloutShelterLevel", 2),
+                withProperty("_falloutShelterSpaUsed", false),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(
+              getBoosts(), not(hasItem(hasProperty("cmd", startsWith("campground vault3")))));
+        }
+      }
+    }
+
+    @Nested
+    class HatTrickPath {
+      @Test
+      public void hatTrickDoesNotRecommendHat() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.HAT_TRICK),
+                withEquippableItem("helmet turtle"),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), not(hasItem(recommendsSlot(Slot.HAT))));
+        }
+      }
+    }
+
+    @Nested
+    class QuantumTerrarium {
+      @Test
+      public void quantumPathMaximizesSuccessfully() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.QUANTUM),
+                withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("item"));
+        }
+      }
+    }
+
+    @Nested
+    class NoobcorePath {
+      @Test
+      public void noobcoreMaximizesSuccessfully() {
+        var cleanups = new Cleanups(withPath(Path.GELATINOUS_NOOB), withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+        }
+      }
+    }
+
+    @Nested
+    class LegacyOfLoathingPathItems {
+      @Test
+      public void legacyOfLoathingReplicaCargoShorts() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.LEGACY_OF_LOATHING),
+                withItem(ItemPool.REPLICA_CARGO_CULTIST_SHORTS),
+                withProperty("_cargoPocketEmptied", false),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("meat"));
+          assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("cargo"))));
+        }
+      }
+
+      @Test
+      public void legacyOfLoathingReplicaDeck() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.LEGACY_OF_LOATHING),
+                withItem(ItemPool.REPLICA_DECK_OF_EVERY_CARD),
+                withProperty("_deckCardsDrawn", 0),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("mus"));
+          assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("play"))));
+        }
+      }
+
+      @Test
+      public void legacyOfLoathingReplicaGenieBottle() {
+        var cleanups =
+            new Cleanups(
+                withPath(Path.LEGACY_OF_LOATHING),
+                withItem(ItemPool.REPLICA_GENIE_BOTTLE),
+                withProperty("_genieWishesUsed", 0),
+                withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("meat"));
+          assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("genie"))));
+        }
+      }
+    }
+
+    @Nested
+    class GLoverPath {
+      @Test
+      public void gloverMaximizesSuccessfully() {
+        var cleanups = new Cleanups(withPath(Path.GLOVER), withStats(100, 100, 100));
+        try (cleanups) {
+          assertTrue(maximize("exp"));
+        }
+      }
+    }
+  }
+
+  @Nested
+  class HatterEffects {
+    @Test
+    public void hatterNotAvailableWhenVisited() {
+      var cleanups =
+          new Cleanups(
+              withItem(ItemPool.DRINK_ME_POTION),
+              withProperty("_madTeaParty", true),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("hatter")))));
+      }
+    }
+
+    @Test
+    public void hatterNotAvailableWithoutPotionOrEffect() {
+      var cleanups = new Cleanups(withProperty("_madTeaParty", false), withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("hatter")))));
+      }
+    }
+  }
+
+  @Nested
+  class SpacegateVaccines {
+    @Test
+    public void spacegateVaccineNotAvailableWhenUsed() {
+      var cleanups =
+          new Cleanups(
+              withProperty("spacegateAlways", true),
+              withProperty("spacegateVaccine1", true),
+              withProperty("_spacegateVaccine", true),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("spacegate")))));
+      }
+    }
+
+    @Test
+    public void spacegateVaccineNotAvailableWithoutVaccines() {
+      var cleanups =
+          new Cleanups(
+              withProperty("spacegateAlways", true),
+              withProperty("spacegateVaccine1", false),
+              withProperty("spacegateVaccine2", false),
+              withProperty("spacegateVaccine3", false),
+              withProperty("_spacegateVaccine", false),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("spacegate")))));
+      }
+    }
+  }
+
+  @Nested
+  class TelescopeEffects {
+    @Test
+    public void telescopeNotAvailableWithoutUpgrades() {
+      var cleanups =
+          new Cleanups(
+              withProperty("telescopeUpgrades", 0),
+              withProperty("telescopeLookedHigh", false),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("telescope")))));
+      }
+    }
+
+    @Test
+    public void telescopeNotAvailableWhenUsed() {
+      var cleanups =
+          new Cleanups(
+              withProperty("telescopeUpgrades", 5),
+              withProperty("telescopeLookedHigh", true),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("telescope")))));
+      }
+    }
+  }
+
+  @Nested
+  class BallpitEffects {
+    @Test
+    public void ballpitNotAvailableWhenUsed() {
+      var cleanups = new Cleanups(withProperty("_ballpit", true), withStats(100, 100, 100));
+      try (cleanups) {
+        maximize("mus");
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("ballpit")))));
+      }
+    }
+  }
+
+  @Nested
+  class JukeboxEffects {
+    @Test
+    public void jukeboxNotAvailableWhenUsed() {
+      var cleanups = new Cleanups(withProperty("_jukebox", true), withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("jukebox")))));
+      }
+    }
+  }
+
+  @Nested
+  class BarrelShrineEffects {
+    @Test
+    public void barrelPrayerNotAvailableWhenUsed() {
+      var cleanups =
+          new Cleanups(
+              withProperty("barrelShrineUnlocked", true),
+              withProperty("_barrelPrayer", true),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        maximize("item");
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("barrelprayer")))));
+      }
+    }
+
+    @Test
+    public void barrelPrayerNotAvailableWhenNotUnlocked() {
+      var cleanups =
+          new Cleanups(
+              withProperty("barrelShrineUnlocked", false),
+              withProperty("_barrelPrayer", false),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        maximize("item");
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("barrelprayer")))));
+      }
+    }
   }
 
   @Nested
