@@ -67,7 +67,11 @@ public class BoostTest {
           new Boost("cast disco leer", "Disco Leer (+10% meat)", effect, false, null, 10.0, false);
 
       assertFalse(boost.isEquipment());
+      assertEquals("cast disco leer", boost.getCmd());
+      assertEquals("Disco Leer (+10% meat)", boost.toString());
+      assertEquals(10.0, boost.getBoost(), 0.01);
       assertEquals(effect, boost.getItem(true));
+      assertNull(boost.getItem(false));
     }
 
     @Test
@@ -77,6 +81,10 @@ public class BoostTest {
           new Boost("shrug cunctatitis", "shrug Cunctatitis", effect, true, null, 5.0, false);
 
       assertFalse(boost.isEquipment());
+      assertEquals("shrug cunctatitis", boost.getCmd());
+      assertEquals("shrug Cunctatitis", boost.toString());
+      assertEquals(5.0, boost.getBoost(), 0.01);
+      assertEquals(effect, boost.getItem(true));
     }
 
     @Test
@@ -86,6 +94,10 @@ public class BoostTest {
           new Boost("cast disco leer", "Disco Leer (+10% meat)", effect, false, null, 10.0, true);
 
       assertFalse(boost.isEquipment());
+      assertEquals("cast disco leer", boost.getCmd());
+      assertEquals(10.0, boost.getBoost(), 0.01);
+      assertEquals(effect, boost.getItem(true));
+      // Priority behavior is verified in CompareTo.priorityBeforeNonPriority
     }
 
     @Test
@@ -102,7 +114,11 @@ public class BoostTest {
       Boost boost = new Boost("horsery dark", "dark horse (+meat)", "dark", 10.0);
 
       assertFalse(boost.isEquipment());
+      assertEquals("horsery dark", boost.getCmd());
+      assertEquals("dark horse (+meat)", boost.toString());
+      assertEquals(10.0, boost.getBoost(), 0.01);
       assertNull(boost.getItem());
+      // Horse name is verified in AddTo.addToWithHorse
     }
 
     @Test
@@ -218,43 +234,6 @@ public class BoostTest {
       assertEquals(effect, boost.getItem(true));
       assertEquals(item, boost.getItem(false));
     }
-
-    @Test
-    public void getBoostReturnsBoostValue() {
-      AdventureResult item = ItemPool.get(ItemPool.HELMET_TURTLE);
-      Boost boost = new Boost("equip hat helmet turtle", "helmet turtle", item, 5.5);
-
-      assertEquals(5.5, boost.getBoost(), 0.01);
-    }
-
-    @Test
-    public void getCmdReturnsCommand() {
-      AdventureResult item = ItemPool.get(ItemPool.HELMET_TURTLE);
-      Boost boost = new Boost("equip hat helmet turtle", "helmet turtle", item, 1.0);
-
-      assertEquals("equip hat helmet turtle", boost.getCmd());
-    }
-
-    @Test
-    public void getSlotReturnsSlot() {
-      AdventureResult item = ItemPool.get(ItemPool.HELMET_TURTLE);
-      Boost boost = new Boost("equip hat helmet turtle", "helmet turtle", Slot.HAT, item, 1.0);
-
-      assertEquals(Slot.HAT, boost.getSlot());
-    }
-
-    @Test
-    public void isEquipmentReturnsCorrectly() {
-      AdventureResult item = ItemPool.get(ItemPool.HELMET_TURTLE);
-      Boost equipment = new Boost("equip hat helmet turtle", "helmet turtle", Slot.HAT, item, 1.0);
-
-      AdventureResult effect = new AdventureResult("Disco Leer", 10, true);
-      Boost nonEquipment =
-          new Boost("cast disco leer", "Disco Leer", effect, false, null, 10.0, false);
-
-      assertTrue(equipment.isEquipment());
-      assertFalse(nonEquipment.isEquipment());
-    }
   }
 
   @Nested
@@ -279,14 +258,6 @@ public class BoostTest {
 
   @Nested
   class ToString {
-    @Test
-    public void toStringReturnsText() {
-      AdventureResult item = ItemPool.get(ItemPool.HELMET_TURTLE);
-      Boost boost = new Boost("equip hat helmet turtle", "helmet turtle (+1)", item, 1.0);
-
-      assertEquals("helmet turtle (+1)", boost.toString());
-    }
-
     @Test
     public void toStringWithAmpersandEscaped() {
       AdventureResult item = ItemPool.get(ItemPool.HELMET_TURTLE);
