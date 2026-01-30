@@ -72,6 +72,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+/**
+ * Unit tests for specific Maximizer behaviors. Tests here should focus on individual features like
+ * slot handling, path restrictions, familiar switching, modifier calculations, and expression
+ * parsing.
+ *
+ * <p>For integration tests that simulate real-world user workflows involving multiple components,
+ * use {@link MaximizerIntegrationTest} instead.
+ */
 public class MaximizerTest {
   @BeforeAll
   public static void beforeAll() {
@@ -1658,6 +1666,34 @@ public class MaximizerTest {
         assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("familiar Purse Rat"))));
       }
     }
+
+    @Test
+    public void familiarSwitchingSuggested() {
+      var cleanups =
+          new Cleanups(
+              withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY),
+              withFamiliarInTerrarium(FamiliarPool.LEPRECHAUN),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("meat, switch leprechaun"));
+        // Should recommend switching to leprechaun for meat
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("familiar Leprechaun"))));
+      }
+    }
+
+    @Test
+    public void familiarEquipmentConsidered() {
+      var cleanups =
+          new Cleanups(
+              withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY),
+              withEquippableItem("lead necklace"),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("familiar weight"));
+        // Should recommend lead necklace
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.FAMILIAR, "lead necklace")));
+      }
+    }
   }
 
   @Nested
@@ -2808,6 +2844,81 @@ public class MaximizerTest {
     try (cleanups) {
       assertTrue(maximize("food drop"));
       assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("friars")))));
+    }
+  }
+
+  @Nested
+  class PathBehavior {
+    @Test
+    public void beecoreRestrictsBeeItems() {
+      var cleanups =
+          new Cleanups(
+              withPath(Path.BEES_HATE_YOU),
+              withEquippableItem("helmet turtle"),
+              withEquippableItem("bugbear beanie"),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus, 0 beeosity"));
+        // In beecore with 0 beeosity, should avoid items with B's
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
+        assertThat(getBoosts(), not(hasItem(recommendsSlot(Slot.HAT, "bugbear beanie"))));
+      }
+    }
+
+    @Test
+    public void hardcoreWithoutMallAccess() {
+      var cleanups =
+          new Cleanups(
+              withHardcore(), withEquippableItem("helmet turtle"), withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus"));
+        // Hardcore limits available items
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
+      }
+    }
+  }
+
+  @Nested
+  class Slots {
+    @Test
+    public void weaponOffhandInteraction() {
+      var cleanups =
+          new Cleanups(
+              withEquippableItem("seal-clubbing club"),
+              withEquippableItem("catskin buckler"),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("mus, shield"));
+        // Should equip weapon and shield
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.WEAPON)));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.OFFHAND, "catskin buckler")));
+      }
+    }
+
+    @Test
+    public void shirtRequiresTorsoAwareness() {
+      var cleanups =
+          new Cleanups(
+              withEquippableItem("eXtreme Bi-Polar Fleece Vest"), withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("cold res"));
+        // Without Torso Awareness, shirt won't be recommended
+        assertThat(getBoosts(), not(hasItem(recommendsSlot(Slot.SHIRT))));
+      }
+    }
+
+    @Test
+    public void shirtWithTorsoAwareness() {
+      var cleanups =
+          new Cleanups(
+              withEquippableItem("eXtreme Bi-Polar Fleece Vest"),
+              withSkill("Torso Awareness"),
+              withStats(100, 100, 100));
+      try (cleanups) {
+        assertTrue(maximize("cold res"));
+        // With Torso Awareness, shirt should be recommended
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.SHIRT)));
+      }
     }
   }
 }
