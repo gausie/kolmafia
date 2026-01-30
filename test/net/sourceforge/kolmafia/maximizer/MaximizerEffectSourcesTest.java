@@ -17,6 +17,7 @@ import static internal.helpers.Player.withProperty;
 import static internal.helpers.Player.withRestricted;
 import static internal.helpers.Player.withSign;
 import static internal.helpers.Player.withSkill;
+import static internal.helpers.Player.withSpleenUse;
 import static internal.helpers.Player.withStats;
 import static internal.helpers.Player.withWorkshedItem;
 import static internal.matchers.Maximizer.recommendsSlot;
@@ -1022,13 +1023,14 @@ public class MaximizerEffectSourcesTest {
       var cleanups =
           new Cleanups(
               withClass(AscensionClass.TURTLE_TAMER),
+              withSpleenUse(0),
               withRestricted(false),
               withItem(ItemPool.PILL_KEEPER),
               withProperty("_freePillKeeperUsed", true),
               withStats(100, 100, 100));
       try (cleanups) {
         // Hulkien provides stat percents. After free use, pillkeeper costs 3 spleen,
-        // so we need a class that has spleen capacity.
+        // so we need a class that has spleen capacity and available spleen.
         assertTrue(maximize("mus percent"));
         assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("pillkeeper stat"))));
       }
@@ -1104,12 +1106,14 @@ public class MaximizerEffectSourcesTest {
       var cleanups =
           new Cleanups(
               withClass(AscensionClass.TURTLE_TAMER),
+              withSpleenUse(0),
               withSkill("Sweet Synthesis"),
               // Two complex candies (candy2) for tier 3 synthesis (Synthesis: Learning)
               withItem(ItemPool.FANCY_CHOCOLATE, 2),
               withStats(100, 100, 100));
       try (cleanups) {
-        // Synthesis: Learning provides +50% mys experience
+        // Synthesis: Learning provides +50% mys experience.
+        // Requires spleen capacity (synthesis costs 1 spleen).
         assertTrue(maximize("mys exp percent"));
         assertThat(
             getBoosts(), hasItem(hasProperty("cmd", equalTo("synthesize Synthesis: Learning"))));
