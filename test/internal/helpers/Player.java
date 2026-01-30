@@ -1778,6 +1778,18 @@ public class Player {
   }
 
   /**
+   * Sets the Asdon Martin fuel amount
+   *
+   * @param fuel Fuel amount to set
+   * @return Resets fuel to 0
+   */
+  public static Cleanups withAsdonMartinFuel(final int fuel) {
+    var oldFuel = CampgroundRequest.getFuel();
+    CampgroundRequest.setFuel(fuel);
+    return new Cleanups(() -> CampgroundRequest.setFuel(oldFuel));
+  }
+
+  /**
    * Sets the user as having a range installed
    *
    * @return Removes the range
