@@ -5,8 +5,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -156,8 +154,7 @@ public class BoostTest {
     @Test
     public void priorityBeforeNonPriority() {
       AdventureResult effect1 = new AdventureResult("Disco Leer", 10, true);
-      Boost priority =
-          new Boost("cast disco leer", "Disco Leer", effect1, false, null, 5.0, true);
+      Boost priority = new Boost("cast disco leer", "Disco Leer", effect1, false, null, 5.0, true);
 
       AdventureResult effect2 = new AdventureResult("Fat Leon's Phat Loot Lyric", 10, true);
       Boost nonPriority =
@@ -185,8 +182,7 @@ public class BoostTest {
       Boost equip1 = new Boost("equip hat helmet turtle", "helmet turtle", Slot.HAT, item1, 1.0);
 
       AdventureResult item2 = ItemPool.get(ItemPool.MARIACHI_HAT);
-      Boost equip2 =
-          new Boost("equip hat mariachi hat", "mariachi hat", Slot.HAT, item2, 2.0);
+      Boost equip2 = new Boost("equip hat mariachi hat", "mariachi hat", Slot.HAT, item2, 2.0);
 
       // Equipment with same priority preserves order (returns 0)
       assertEquals(0, equip1.compareTo(equip2));

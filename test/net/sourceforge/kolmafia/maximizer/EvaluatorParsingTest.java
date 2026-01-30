@@ -7,8 +7,6 @@ import static internal.helpers.Player.withEquippableItem;
 import static internal.helpers.Player.withEquipped;
 import static internal.helpers.Player.withFamiliar;
 import static internal.helpers.Player.withFamiliarInTerrarium;
-import static internal.helpers.Player.withItem;
-import static internal.helpers.Player.withProperty;
 import static internal.helpers.Player.withSkill;
 import static internal.helpers.Player.withStats;
 import static internal.matchers.Maximizer.recommendsSlot;
@@ -58,7 +56,8 @@ public class EvaluatorParsingTest {
     @Test
     public void minusWeaponExcludesWeaponSlot() {
       var cleanups =
-          new Cleanups(withEquippableItem("seal-clubbing club"), withEquippableItem("helmet turtle"));
+          new Cleanups(
+              withEquippableItem("seal-clubbing club"), withEquippableItem("helmet turtle"));
       try (cleanups) {
         assertTrue(maximize("mus, -weapon"));
         assertThat(getBoosts(), not(hasItem(recommendsSlot(Slot.WEAPON))));
@@ -69,7 +68,8 @@ public class EvaluatorParsingTest {
     @Test
     public void minusOffhandExcludesOffhandSlot() {
       var cleanups =
-          new Cleanups(withEquippableItem("helmet turtle"), withEquippableItem("seal-skull helmet"));
+          new Cleanups(
+              withEquippableItem("helmet turtle"), withEquippableItem("seal-skull helmet"));
       try (cleanups) {
         assertTrue(maximize("mus, -offhand"));
         assertThat(getBoosts(), not(hasItem(recommendsSlot(Slot.OFFHAND))));
@@ -454,7 +454,8 @@ public class EvaluatorParsingTest {
 
     @Test
     public void twoHandsAllowsTwoHandedWeapons() {
-      var cleanups = new Cleanups(withEquippableItem("seal-clubbing club"), withStats(100, 100, 100));
+      var cleanups =
+          new Cleanups(withEquippableItem("seal-clubbing club"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus, 2 hands"));
         // Just verify parsing - may or may not have 2h weapons
@@ -727,7 +728,8 @@ public class EvaluatorParsingTest {
 
     @Test
     public void effectiveConsidersWeaponPower() {
-      var cleanups = new Cleanups(withEquippableItem("seal-clubbing club"), withStats(100, 100, 100));
+      var cleanups =
+          new Cleanups(withEquippableItem("seal-clubbing club"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus, effective"));
         // Effective considers weapon power vs monster defense
@@ -1013,10 +1015,7 @@ public class EvaluatorParsingTest {
   class QuotedKeywords {
     @Test
     public void parsesQuotedEquip() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("sea chaps"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("sea chaps"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("+equip \"sea chaps\""));
       }
@@ -1024,10 +1023,7 @@ public class EvaluatorParsingTest {
 
     @Test
     public void parsesQuotedModifierKeyword() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Tests quoted keyword handling (lines 243-244 in Evaluator.java)
         // Quoted modifier keywords like "muscle" should work the same as unquoted
@@ -1037,10 +1033,7 @@ public class EvaluatorParsingTest {
 
     @Test
     public void parsesWeightedQuotedModifierKeyword() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Tests quoted keyword with weight
         assertTrue(maximize("5 \"muscle\""));
@@ -1100,9 +1093,7 @@ public class EvaluatorParsingTest {
     @Test
     public void handlesCurrentEquipmentCheck() {
       var cleanups =
-          new Cleanups(
-              withEquipped(Slot.HAT, "helmet turtle"),
-              withStats(100, 100, 100));
+          new Cleanups(withEquipped(Slot.HAT, "helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
         // Should keep current equipment if it's already the best
@@ -1114,10 +1105,7 @@ public class EvaluatorParsingTest {
   class EmptySlotHandling {
     @Test
     public void handlesEmptySlots() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Tests empty slot preference (lines 334-342)
         assertTrue(maximize("mus, empty"));
@@ -1141,10 +1129,7 @@ public class EvaluatorParsingTest {
   class TotalMinMax {
     @Test
     public void handlesTotalMin() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Tests total min (line 250)
         assertTrue(maximize("mus, 10 min"));
@@ -1153,10 +1138,7 @@ public class EvaluatorParsingTest {
 
     @Test
     public void handlesTotalMax() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Tests total max (line 259)
         assertTrue(maximize("mus, 200 max"));

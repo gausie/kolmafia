@@ -14,9 +14,7 @@ import static internal.matchers.Maximizer.recommendsSlot;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import internal.helpers.Cleanups;
@@ -24,7 +22,6 @@ import net.sourceforge.kolmafia.AscensionPath.Path;
 import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.equipment.Slot;
 import net.sourceforge.kolmafia.modifiers.DerivedModifier;
-import net.sourceforge.kolmafia.modifiers.DoubleModifier;
 import net.sourceforge.kolmafia.objectpool.FamiliarPool;
 import net.sourceforge.kolmafia.preferences.Preferences;
 import org.junit.jupiter.api.BeforeAll;
@@ -228,10 +225,7 @@ public class MaximizerSpeculationTest {
   class MutexViolations {
     @Test
     public void detectsMutexViolations() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Mutex items should cause failure if worn together
         assertTrue(maximize("mus"));
@@ -336,9 +330,7 @@ public class MaximizerSpeculationTest {
     @Test
     public void chefstaffWithoutGloveOrSkillFails() {
       var cleanups =
-          new Cleanups(
-              withEquippableItem("Staff of Simmering Hatred"),
-              withStats(100, 100, 100));
+          new Cleanups(withEquippableItem("Staff of Simmering Hatred"), withStats(100, 100, 100));
       try (cleanups) {
         // Without Sauce Glove or Spirit of Rigatoni, chefstaff not usable
         assertTrue(maximize("spell dmg"));
@@ -398,10 +390,7 @@ public class MaximizerSpeculationTest {
   class ExceededHandling {
     @Test
     public void handlesExceededMax() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         // Max constraint tests exceeded behavior
         assertTrue(maximize("mus 50 max"));
@@ -443,10 +432,7 @@ public class MaximizerSpeculationTest {
   class ManaCostHandling {
     @Test
     public void accountsForStackableMana() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("wizard hat"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("wizard hat"), withStats(100, 100, 100));
       try (cleanups) {
         // Mana cost modifiers should be accounted for
         assertTrue(maximize("-mana cost"));
@@ -458,10 +444,7 @@ public class MaximizerSpeculationTest {
   class InitiativeHandling {
     @Test
     public void accountsForInitiativePenalty() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("old sweatpants"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("old sweatpants"), withStats(100, 100, 100));
       try (cleanups) {
         // Initiative penalty should be factored in
         assertTrue(maximize("init"));
@@ -473,10 +456,7 @@ public class MaximizerSpeculationTest {
   class MeatdropHandling {
     @Test
     public void accountsForMeatdropPenalty() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("meat detector"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("meat detector"), withStats(100, 100, 100));
       try (cleanups) {
         // Meatdrop modifiers should be accounted for
         assertTrue(maximize("meat"));
@@ -489,9 +469,7 @@ public class MaximizerSpeculationTest {
     @Test
     public void accountsForItemdropPenalty() {
       var cleanups =
-          new Cleanups(
-              withEquippableItem("bounty-hunting helmet"),
-              withStats(100, 100, 100));
+          new Cleanups(withEquippableItem("bounty-hunting helmet"), withStats(100, 100, 100));
       try (cleanups) {
         // Itemdrop modifiers should be accounted for
         assertTrue(maximize("item"));

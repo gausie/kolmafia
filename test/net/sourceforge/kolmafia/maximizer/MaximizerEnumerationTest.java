@@ -11,7 +11,6 @@ import static internal.helpers.Player.withFamiliar;
 import static internal.helpers.Player.withFamiliarInTerrarium;
 import static internal.helpers.Player.withHardcore;
 import static internal.helpers.Player.withItem;
-import static internal.helpers.Player.withItemInCloset;
 import static internal.helpers.Player.withItemInFreepulls;
 import static internal.helpers.Player.withItemInStorage;
 import static internal.helpers.Player.withProperty;
@@ -23,14 +22,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import internal.helpers.Cleanups;
 import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.equipment.Slot;
 import net.sourceforge.kolmafia.modifiers.DerivedModifier;
-import net.sourceforge.kolmafia.modifiers.DoubleModifier;
 import net.sourceforge.kolmafia.objectpool.FamiliarPool;
 import net.sourceforge.kolmafia.preferences.Preferences;
 import org.junit.jupiter.api.BeforeAll;
@@ -89,9 +86,7 @@ public class MaximizerEnumerationTest {
     public void speculateCreatableConsidersCreatableItems() {
       var cleanups =
           new Cleanups(
-              withItem("helmet turtle"),
-              withItem("seal-skull helmet"),
-              withStats(100, 100, 100));
+              withItem("helmet turtle"), withItem("seal-skull helmet"), withStats(100, 100, 100));
       try (cleanups) {
         maximizeCreatable("mus");
         // Should consider creatable items in addition to on-hand
@@ -113,7 +108,8 @@ public class MaximizerEnumerationTest {
     @Test
     public void findsFamiliarEquipmentForCurrentFamiliar() {
       var cleanups =
-          new Cleanups(withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY), withEquippableItem("lead necklace"));
+          new Cleanups(
+              withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY), withEquippableItem("lead necklace"));
       try (cleanups) {
         assertTrue(maximize("familiar weight"));
         assertThat(getBoosts(), hasItem(recommendsSlot(Slot.FAMILIAR, "lead necklace")));
@@ -123,7 +119,8 @@ public class MaximizerEnumerationTest {
     @Test
     public void excludesFamiliarEquipmentWhenSlotExcluded() {
       var cleanups =
-          new Cleanups(withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY), withEquippableItem("lead necklace"));
+          new Cleanups(
+              withFamiliar(FamiliarPool.BABY_GRAVY_FAIRY), withEquippableItem("lead necklace"));
       try (cleanups) {
         assertTrue(maximize("familiar weight, -familiar"));
         assertThat(getBoosts(), not(hasItem(recommendsSlot(Slot.FAMILIAR))));
@@ -316,8 +313,7 @@ public class MaximizerEnumerationTest {
     @Test
     public void considersCurrentlyEquippedItemsEvenWithoutStats() {
       var cleanups =
-          new Cleanups(
-              withEquipped(Slot.ACCESSORY1, "Mr. Accessory"), withStats(0, 0, 0));
+          new Cleanups(withEquipped(Slot.ACCESSORY1, "Mr. Accessory"), withStats(0, 0, 0));
       try (cleanups) {
         // Mr. Accessory is equipped but we don't have stats to re-equip
         // Should still consider it as currently worn

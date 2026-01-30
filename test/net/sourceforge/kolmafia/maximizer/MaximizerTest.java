@@ -3,7 +3,6 @@ package net.sourceforge.kolmafia.maximizer;
 import static internal.helpers.Maximizer.getBoosts;
 import static internal.helpers.Maximizer.maximize;
 import static internal.helpers.Maximizer.maximizeAny;
-import static internal.helpers.Maximizer.maximizeIncludeAll;
 import static internal.helpers.Maximizer.modFor;
 import static internal.helpers.Player.withCampgroundItem;
 import static internal.helpers.Player.withClass;
@@ -2754,8 +2753,7 @@ public class MaximizerTest {
   public void doesNotSuggestConcertWhenAlreadyVisited() {
     var cleanups =
         new Cleanups(
-            withProperty("sidequestArenaCompleted", "hippy"),
-            withProperty("concertVisited", true));
+            withProperty("sidequestArenaCompleted", "hippy"), withProperty("concertVisited", true));
     try (cleanups) {
       assertTrue(maximize("exp"));
       assertThat(getBoosts(), not(hasItem(hasProperty("cmd", containsString("concert")))));
@@ -2766,8 +2764,7 @@ public class MaximizerTest {
   public void doesNotSuggestConcertWhenQuestNotCompleted() {
     var cleanups =
         new Cleanups(
-            withProperty("sidequestArenaCompleted", "none"),
-            withProperty("concertVisited", false));
+            withProperty("sidequestArenaCompleted", "none"), withProperty("concertVisited", false));
     try (cleanups) {
       assertTrue(maximize("exp"));
       assertThat(getBoosts(), not(hasItem(hasProperty("cmd", containsString("concert")))));

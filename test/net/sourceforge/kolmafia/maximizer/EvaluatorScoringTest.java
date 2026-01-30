@@ -3,11 +3,7 @@ package net.sourceforge.kolmafia.maximizer;
 import static internal.helpers.Maximizer.getBoosts;
 import static internal.helpers.Maximizer.maximize;
 import static internal.helpers.Maximizer.modFor;
-import static internal.helpers.Player.withEffect;
 import static internal.helpers.Player.withEquippableItem;
-import static internal.helpers.Player.withEquipped;
-import static internal.helpers.Player.withItem;
-import static internal.helpers.Player.withProperty;
 import static internal.helpers.Player.withSkill;
 import static internal.helpers.Player.withStats;
 import static internal.matchers.Maximizer.recommendsSlot;
@@ -292,7 +288,8 @@ public class EvaluatorScoringTest {
 
     @Test
     public void weaponDamageIncludesPercent() {
-      var cleanups = new Cleanups(withEquippableItem("seal-clubbing club"), withStats(100, 100, 100));
+      var cleanups =
+          new Cleanups(withEquippableItem("seal-clubbing club"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("weapon damage"));
         // Weapon damage calculation combines flat and percent
@@ -313,7 +310,8 @@ public class EvaluatorScoringTest {
   class ResistanceImmunity {
     @Test
     public void coldResistanceFromSkill() {
-      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withSkill("Refusal to Freeze"));
+      var cleanups =
+          new Cleanups(withEquippableItem("helmet turtle"), withSkill("Refusal to Freeze"));
       try (cleanups) {
         assertTrue(maximize("cold res"));
         // Refusal to Freeze should give cold resistance

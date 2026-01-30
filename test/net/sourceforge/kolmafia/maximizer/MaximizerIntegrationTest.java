@@ -2,25 +2,17 @@ package net.sourceforge.kolmafia.maximizer;
 
 import static internal.helpers.Maximizer.getBoosts;
 import static internal.helpers.Maximizer.maximize;
-import static internal.helpers.Maximizer.maximizeAny;
-import static internal.helpers.Maximizer.maximizeCreatable;
 import static internal.helpers.Maximizer.modFor;
-import static internal.helpers.Player.withClass;
-import static internal.helpers.Player.withEffect;
 import static internal.helpers.Player.withEquippableItem;
 import static internal.helpers.Player.withEquipped;
 import static internal.helpers.Player.withFamiliar;
 import static internal.helpers.Player.withFamiliarInTerrarium;
 import static internal.helpers.Player.withHardcore;
-import static internal.helpers.Player.withInteractivity;
-import static internal.helpers.Player.withItem;
-import static internal.helpers.Player.withMeat;
 import static internal.helpers.Player.withPath;
 import static internal.helpers.Player.withProperty;
 import static internal.helpers.Player.withRestricted;
 import static internal.helpers.Player.withSkill;
 import static internal.helpers.Player.withStats;
-import static internal.matchers.Maximizer.recommends;
 import static internal.matchers.Maximizer.recommendsSlot;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -28,12 +20,10 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import internal.helpers.Cleanups;
-import net.sourceforge.kolmafia.AscensionClass;
 import net.sourceforge.kolmafia.AscensionPath.Path;
 import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.equipment.Slot;
@@ -85,8 +75,7 @@ public class MaximizerIntegrationTest {
 
     @Test
     public void combatRateIncrease() {
-      var cleanups =
-          new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("+combat"));
         // Should try to increase combat rate
@@ -95,8 +84,7 @@ public class MaximizerIntegrationTest {
 
     @Test
     public void combatRateDecrease() {
-      var cleanups =
-          new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("-combat"));
         // Should try to decrease combat rate
@@ -152,9 +140,7 @@ public class MaximizerIntegrationTest {
     public void hardcoreWithoutMallAccess() {
       var cleanups =
           new Cleanups(
-              withHardcore(),
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+              withHardcore(), withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
         // Hardcore limits available items
@@ -166,9 +152,7 @@ public class MaximizerIntegrationTest {
     public void standardRestrictionsApplied() {
       var cleanups =
           new Cleanups(
-              withRestricted(true),
-              withEquippableItem("helmet turtle"),
-              withStats(100, 100, 100));
+              withRestricted(true), withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
         // Standard restrictions may limit items
@@ -226,8 +210,7 @@ public class MaximizerIntegrationTest {
   class ExecutionResults {
     @Test
     public void boostCommandsAreValid() {
-      var cleanups =
-          new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
         var boosts = getBoosts();
@@ -259,10 +242,7 @@ public class MaximizerIntegrationTest {
 
     @Test
     public void effectCastingSuggested() {
-      var cleanups =
-          new Cleanups(
-              withSkill("Disco Leer"),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withSkill("Disco Leer"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("meat"));
         var boosts = getBoosts();
@@ -321,8 +301,7 @@ public class MaximizerIntegrationTest {
 
     @Test
     public void accessorySlotFilling() {
-      var cleanups =
-          new Cleanups(withEquippableItem("hand in glove", 3), withStats(100, 100, 100));
+      var cleanups = new Cleanups(withEquippableItem("hand in glove", 3), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
         // With 3 accessories available, should fill all slots
@@ -333,8 +312,7 @@ public class MaximizerIntegrationTest {
     public void shirtRequiresTorsoAwareness() {
       var cleanups =
           new Cleanups(
-              withEquippableItem("eXtreme Bi-Polar Fleece Vest"),
-              withStats(100, 100, 100));
+              withEquippableItem("eXtreme Bi-Polar Fleece Vest"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("cold res"));
         // Without Torso Awareness, shirt won't be recommended

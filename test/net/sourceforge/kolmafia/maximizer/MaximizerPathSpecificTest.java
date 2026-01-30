@@ -2,7 +2,6 @@ package net.sourceforge.kolmafia.maximizer;
 
 import static internal.helpers.Maximizer.getBoosts;
 import static internal.helpers.Maximizer.maximize;
-import static internal.helpers.Player.withEffect;
 import static internal.helpers.Player.withEquippableItem;
 import static internal.helpers.Player.withFamiliar;
 import static internal.helpers.Player.withFamiliarInTerrarium;
@@ -34,8 +33,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for path-specific and quest-specific behaviors in Maximizer.java.
- * These tests verify that specific game states affect maximizer recommendations correctly.
+ * Tests for path-specific and quest-specific behaviors in Maximizer.java. These tests verify that
+ * specific game states affect maximizer recommendations correctly.
  */
 public class MaximizerPathSpecificTest {
   @BeforeAll
@@ -303,10 +302,7 @@ public class MaximizerPathSpecificTest {
 
     @Test
     public void hatterNotAvailableWithoutPotionOrEffect() {
-      var cleanups =
-          new Cleanups(
-              withProperty("_madTeaParty", false),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withProperty("_madTeaParty", false), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
         // Hatter not available without potion or effect
@@ -387,7 +383,8 @@ public class MaximizerPathSpecificTest {
     public void ballpitNotAvailableWhenUsed() {
       var cleanups = new Cleanups(withProperty("_ballpit", true), withStats(100, 100, 100));
       try (cleanups) {
-        // "stat" keyword returns false when no equipment gives stats, but ballpit shouldn't be in boosts
+        // "stat" keyword returns false when no equipment gives stats, but ballpit shouldn't be in
+        // boosts
         maximize("mus");
         // Ballpit should not be available when used
         assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("ballpit")))));
@@ -489,10 +486,7 @@ public class MaximizerPathSpecificTest {
   class NoobcorePath {
     @Test
     public void noobcoreMaximizesSuccessfully() {
-      var cleanups =
-          new Cleanups(
-              withPath(Path.GELATINOUS_NOOB),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withPath(Path.GELATINOUS_NOOB), withStats(100, 100, 100));
       try (cleanups) {
         // Noobcore path shouldn't crash maximize
         assertTrue(maximize("mus"));
@@ -552,10 +546,7 @@ public class MaximizerPathSpecificTest {
   class GLoverPath {
     @Test
     public void gloverMaximizesSuccessfully() {
-      var cleanups =
-          new Cleanups(
-              withPath(Path.GLOVER),
-              withStats(100, 100, 100));
+      var cleanups = new Cleanups(withPath(Path.GLOVER), withStats(100, 100, 100));
       try (cleanups) {
         // G-Lover path shouldn't crash maximize
         assertTrue(maximize("exp"));

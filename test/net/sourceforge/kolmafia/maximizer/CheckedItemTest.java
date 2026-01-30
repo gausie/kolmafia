@@ -5,17 +5,14 @@ import static internal.helpers.Player.withInteractivity;
 import static internal.helpers.Player.withItem;
 import static internal.helpers.Player.withItemInStorage;
 import static internal.helpers.Player.withMeat;
-import static internal.helpers.Player.withPath;
 import static internal.helpers.Player.withProperty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import internal.helpers.Cleanups;
-import net.sourceforge.kolmafia.AscensionPath.Path;
 import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.objectpool.ItemPool;
 import net.sourceforge.kolmafia.preferences.Preferences;
@@ -55,8 +52,7 @@ public class CheckedItemTest {
 
     @Test
     public void checksCreatableItems() {
-      var cleanups =
-          new Cleanups(withMeat(10000), withProperty("maximizerNoAdventures", false));
+      var cleanups = new Cleanups(withMeat(10000), withProperty("maximizerNoAdventures", false));
       try (cleanups) {
         // Helmet turtle can be created
         CheckedItem item =
@@ -114,7 +110,10 @@ public class CheckedItemTest {
         // Loathing Legion items can be folded into other forms
         CheckedItem item =
             new CheckedItem(
-                ItemPool.LOATHING_LEGION_HAMMER, EquipScope.SPECULATE_INVENTORY, 100000, PriceLevel.ALL);
+                ItemPool.LOATHING_LEGION_HAMMER,
+                EquipScope.SPECULATE_INVENTORY,
+                100000,
+                PriceLevel.ALL);
         // Should detect foldable from knife
         assertThat(item.foldable, is(greaterThan(0)));
       }
@@ -128,7 +127,10 @@ public class CheckedItemTest {
       try (cleanups) {
         CheckedItem item =
             new CheckedItem(
-                ItemPool.LOATHING_LEGION_HAMMER, EquipScope.SPECULATE_INVENTORY, 100000, PriceLevel.ALL);
+                ItemPool.LOATHING_LEGION_HAMMER,
+                EquipScope.SPECULATE_INVENTORY,
+                100000,
+                PriceLevel.ALL);
         assertEquals(0, item.foldable);
       }
     }
@@ -157,8 +159,7 @@ public class CheckedItemTest {
   class MallBuying {
     @Test
     public void checksMallBuyableInSpeculateAny() {
-      var cleanups =
-          new Cleanups(withInteractivity(true), withMeat(100000));
+      var cleanups = new Cleanups(withInteractivity(true), withMeat(100000));
       try (cleanups) {
         CheckedItem item =
             new CheckedItem(
@@ -263,7 +264,10 @@ public class CheckedItemTest {
     public void validateSkipsWhenDontCheck() throws MaximizerInterruptedException {
       CheckedItem item =
           new CheckedItem(
-              ItemPool.HELMET_TURTLE, EquipScope.SPECULATE_INVENTORY, 100000, PriceLevel.DONT_CHECK);
+              ItemPool.HELMET_TURTLE,
+              EquipScope.SPECULATE_INVENTORY,
+              100000,
+              PriceLevel.DONT_CHECK);
       // Should not throw and should return early
       item.validate(100000, PriceLevel.DONT_CHECK);
     }
@@ -300,8 +304,7 @@ public class CheckedItemTest {
       var cleanups = new Cleanups(withInteractivity(true), withMeat(100));
       try (cleanups) {
         CheckedItem item =
-            new CheckedItem(
-                ItemPool.HELMET_TURTLE, EquipScope.SPECULATE_ANY, 100, PriceLevel.ALL);
+            new CheckedItem(ItemPool.HELMET_TURTLE, EquipScope.SPECULATE_ANY, 100, PriceLevel.ALL);
         if (item.buyableFlag) {
           item.validate(100, PriceLevel.ALL);
           // Should reset mallBuyable when price exceeds limit
@@ -388,8 +391,7 @@ public class CheckedItemTest {
   class SkillCreateCheck {
     @Test
     public void skillCreateCheckEnabled() {
-      var cleanups =
-          new Cleanups(withProperty("maximizerCreateOnHand", true), withMeat(10000));
+      var cleanups = new Cleanups(withProperty("maximizerCreateOnHand", true), withMeat(10000));
       try (cleanups) {
         // Non-equipment items with maximizerCreateOnHand should check creatable
         CheckedItem item =
@@ -401,8 +403,7 @@ public class CheckedItemTest {
 
     @Test
     public void skillCreateCheckDisabled() {
-      var cleanups =
-          new Cleanups(withProperty("maximizerCreateOnHand", false), withMeat(10000));
+      var cleanups = new Cleanups(withProperty("maximizerCreateOnHand", false), withMeat(10000));
       try (cleanups) {
         CheckedItem item =
             new CheckedItem(

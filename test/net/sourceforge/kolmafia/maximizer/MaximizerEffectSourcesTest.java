@@ -1,22 +1,34 @@
 package net.sourceforge.kolmafia.maximizer;
 
+import static internal.helpers.Maximizer.getBoosts;
 import static internal.helpers.Maximizer.maximize;
+import static internal.helpers.Player.withAsdonMartinFuel;
 import static internal.helpers.Player.withCampgroundItem;
+import static internal.helpers.Player.withClass;
 import static internal.helpers.Player.withEffect;
 import static internal.helpers.Player.withEquippableItem;
 import static internal.helpers.Player.withEquipped;
 import static internal.helpers.Player.withFamiliar;
 import static internal.helpers.Player.withFamiliarInTerrarium;
+import static internal.helpers.Player.withInteractivity;
 import static internal.helpers.Player.withItem;
 import static internal.helpers.Player.withMeat;
 import static internal.helpers.Player.withProperty;
+import static internal.helpers.Player.withRestricted;
 import static internal.helpers.Player.withSign;
 import static internal.helpers.Player.withSkill;
 import static internal.helpers.Player.withStats;
 import static internal.helpers.Player.withWorkshedItem;
+import static internal.matchers.Maximizer.recommendsSlot;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import internal.helpers.Cleanups;
+import net.sourceforge.kolmafia.AscensionClass;
 import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.ZodiacSign;
 import net.sourceforge.kolmafia.equipment.Slot;
@@ -24,14 +36,11 @@ import net.sourceforge.kolmafia.objectpool.FamiliarPool;
 import net.sourceforge.kolmafia.objectpool.ItemPool;
 import net.sourceforge.kolmafia.preferences.Preferences;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/**
- * Tests for the various effect sources in Maximizer.java.
- * These tests exercise the code paths for different effect sources
- * without asserting specific recommendations (which depend on complex game state).
- */
+/** Tests for the various effect sources in Maximizer.java. */
 public class MaximizerEffectSourcesTest {
   @BeforeAll
   public static void beforeAll() {
@@ -39,56 +48,48 @@ public class MaximizerEffectSourcesTest {
     Preferences.reset("MaximizerEffectSourcesTest");
   }
 
+  @BeforeEach
+  public void beforeEach() {
+    KoLCharacter.reset("MaximizerEffectSourcesTest");
+    Preferences.reset("MaximizerEffectSourcesTest");
+  }
+
   @Nested
   class Horsery {
     @Test
-    public void exercisesHorseryPath() {
+    public void suggestsHorseryWhenAvailable() {
       var cleanups =
           new Cleanups(
               withProperty("horseryAvailable", true),
               withProperty("_horsery", ""),
-              withMeat(1000),
               withStats(100, 100, 100));
       try (cleanups) {
-        // Should not throw - exercises horsery code path
-        maximize("meat");
+        assertTrue(maximize("-combat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("horsery dark"))));
       }
     }
 
     @Test
-    public void exercisesHorseryWithExistingHorse() {
+    public void doesNotSuggestHorseryWhenNoMeatToSwitch() {
       var cleanups =
           new Cleanups(
               withProperty("horseryAvailable", true),
-              withProperty("_horsery", "normal"),
-              withMeat(1000),
+              withProperty("_horsery", "normal horse"),
+              withMeat(0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("-combat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("horsery dark")))));
       }
     }
 
     @Test
-    public void exercisesHorseryWithoutMeat() {
+    public void doesNotSuggestHorseryWhenUnavailable() {
       var cleanups =
-          new Cleanups(
-              withProperty("horseryAvailable", true),
-              withProperty("_horsery", "normal"),
-              withMeat(100),
-              withStats(100, 100, 100));
+          new Cleanups(withProperty("horseryAvailable", false), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
-      }
-    }
-
-    @Test
-    public void exercisesHorseryUnavailable() {
-      var cleanups =
-          new Cleanups(
-              withProperty("horseryAvailable", false),
-              withStats(100, 100, 100));
-      try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("-combat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("horsery")))));
       }
     }
   }
@@ -96,37 +97,37 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class BoomBox {
     @Test
-    public void exercisesBoomBoxPath() {
+    public void suggestsBoomBoxWhenAvailableWithUses() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.BOOMBOX),
               withProperty("_boomBoxSongsLeft", 11),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("boombox"))));
       }
     }
 
     @Test
-    public void exercisesBoomBoxNoUsesLeft() {
+    public void doesNotSuggestBoomBoxWhenNoUsesLeft() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.BOOMBOX),
               withProperty("_boomBoxSongsLeft", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("boombox")))));
       }
     }
 
     @Test
-    public void exercisesBoomBoxWithoutItem() {
-      var cleanups =
-          new Cleanups(
-              withProperty("_boomBoxSongsLeft", 11),
-              withStats(100, 100, 100));
+    public void doesNotSuggestBoomBoxWhenNotOwned() {
+      var cleanups = new Cleanups(withProperty("_boomBoxSongsLeft", 11), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("boombox")))));
       }
     }
   }
@@ -134,24 +135,20 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class MindControlDevice {
     @Test
-    public void exercisesMCDPath() {
-      var cleanups =
-          new Cleanups(
-              withSign(ZodiacSign.MONGOOSE),
-              withStats(100, 100, 100));
+    public void suggestsMCDWhenAvailable() {
+      var cleanups = new Cleanups(withSign(ZodiacSign.MONGOOSE), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("ml");
+        assertTrue(maximize("ml"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mcd"))));
       }
     }
 
     @Test
-    public void exercisesCanadianMCD() {
-      var cleanups =
-          new Cleanups(
-              withSign(ZodiacSign.WALLABY),
-              withStats(100, 100, 100));
+    public void suggestsCanadianMCDWhenInCanadia() {
+      var cleanups = new Cleanups(withSign(ZodiacSign.WALLABY), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("ml");
+        assertTrue(maximize("ml"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mcd"))));
       }
     }
   }
@@ -159,109 +156,138 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class VIPLounge {
     @Test
-    public void exercisesPoolPath() {
+    public void suggestsPoolWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_poolGames", 0),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("weapon damage percent"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("pool"))));
       }
     }
 
     @Test
-    public void exercisesPoolUsedUp() {
+    public void doesNotSuggestPoolWhenUsedUp() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_poolGames", 3),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("weapon damage percent"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("pool")))));
       }
     }
 
     @Test
-    public void exercisesShowerPath() {
+    public void suggestsShowerWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_aprilShower", false),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        // Shower effects give Experience Percent bonuses (mys exp percent, not mys exp)
+        assertTrue(maximize("mys exp percent"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("shower"))));
       }
     }
 
     @Test
-    public void exercisesShowerUsed() {
+    public void doesNotSuggestShowerWhenUsed() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_aprilShower", true),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mys exp percent"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("shower")))));
       }
     }
 
     @Test
-    public void exercisesSwimPath() {
+    public void suggestsSwimWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_olympicSwimmingPool", false),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("init");
+        assertTrue(maximize("init"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("swim"))));
       }
     }
 
     @Test
-    public void exercisesFortuneBuffPath() {
+    public void suggestsFortuneBuffWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_clanFortuneBuffUsed", false),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("fortune"))));
       }
     }
 
     @Test
-    public void exercisesPhotoBoothPath() {
+    public void suggestsPhotoBoothWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_photoBoothEffects", 0),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Wild and Westy provides +50 initiative
+        assertTrue(maximize("init"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("photobooth"))));
       }
     }
 
     @Test
-    public void exercisesPhotoBoothUsedUp() {
+    public void doesNotSuggestPhotoBoothWhenUsedUp() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.VIP_LOUNGE_KEY),
               withProperty("_photoBoothEffects", 3),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("init"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("photobooth")))));
       }
     }
 
     @Test
-    public void exercisesWithoutVIPKey() {
+    public void doesNotSuggestPoolWithoutVIPKey() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("_poolGames", 0),
+              withInteractivity(true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("weapon damage percent"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("pool")))));
       }
     }
   }
@@ -269,84 +295,77 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class SourceTerminal {
     @Test
-    public void exercisesTerminalPath() {
+    public void suggestsTerminalEnhanceWhenAvailable() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.SOURCE_TERMINAL),
               withProperty("sourceTerminalChips", ""),
-              withProperty("sourceTerminalEnhanceKnown", "items,meat,init,critical,damage,substats"),
+              withProperty(
+                  "sourceTerminalEnhanceKnown",
+                  "items.enh,meat.enh,init.enh,critical.enh,damage.enh,substats.enh"),
               withProperty("_sourceTerminalEnhanceUses", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("terminal enhance"))));
       }
     }
 
     @Test
-    public void exercisesTerminalWithCRAM() {
+    public void suggestsTerminalWithCRAMChipAllowsExtraUse() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.SOURCE_TERMINAL),
               withProperty("sourceTerminalChips", "CRAM"),
-              withProperty("sourceTerminalEnhanceKnown", "items,meat,init,critical,damage,substats"),
+              withProperty(
+                  "sourceTerminalEnhanceKnown",
+                  "items.enh,meat.enh,init.enh,critical.enh,damage.enh,substats.enh"),
               withProperty("_sourceTerminalEnhanceUses", 1),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("terminal enhance"))));
       }
     }
 
     @Test
-    public void exercisesTerminalWithSCRAM() {
+    public void suggestsTerminalWithSCRAMChipAllowsThirdUse() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.SOURCE_TERMINAL),
               withProperty("sourceTerminalChips", "CRAM,SCRAM"),
-              withProperty("sourceTerminalEnhanceKnown", "items"),
+              withProperty("sourceTerminalEnhanceKnown", "items.enh"),
               withProperty("_sourceTerminalEnhanceUses", 2),
               withProperty("sourceTerminalPram", 3),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("terminal enhance"))));
       }
     }
 
     @Test
-    public void exercisesTerminalWithINGRAM() {
-      var cleanups =
-          new Cleanups(
-              withCampgroundItem(ItemPool.SOURCE_TERMINAL),
-              withProperty("sourceTerminalChips", "INGRAM"),
-              withProperty("sourceTerminalEnhanceKnown", "items"),
-              withProperty("_sourceTerminalEnhanceUses", 0),
-              withStats(100, 100, 100));
-      try (cleanups) {
-        maximize("item");
-      }
-    }
-
-    @Test
-    public void exercisesTerminalUsedUp() {
+    public void doesNotSuggestTerminalWhenUsedUp() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.SOURCE_TERMINAL),
               withProperty("sourceTerminalChips", ""),
-              withProperty("sourceTerminalEnhanceKnown", "items"),
+              withProperty("sourceTerminalEnhanceKnown", "items.enh"),
               withProperty("_sourceTerminalEnhanceUses", 1),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("terminal enhance")))));
       }
     }
 
     @Test
-    public void exercisesNoTerminal() {
+    public void doesNotSuggestTerminalWhenNotInstalled() {
       var cleanups =
-          new Cleanups(
-              withProperty("_sourceTerminalEnhanceUses", 0),
-              withStats(100, 100, 100));
+          new Cleanups(withProperty("_sourceTerminalEnhanceUses", 0), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("terminal enhance")))));
       }
     }
   }
@@ -354,26 +373,28 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class AsdonMartin {
     @Test
-    public void exercisesAsdonPath() {
+    public void suggestsAsdonDriveWhenHasFuel() {
       var cleanups =
           new Cleanups(
               withWorkshedItem(ItemPool.ASDON_MARTIN),
-              withProperty("_campgroundFuel", 100),
+              withAsdonMartinFuel(100),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("asdonmartin drive"))));
       }
     }
 
     @Test
-    public void exercisesAsdonLowFuel() {
+    public void doesNotSuggestAsdonDriveWhenLowFuel() {
       var cleanups =
           new Cleanups(
               withWorkshedItem(ItemPool.ASDON_MARTIN),
-              withProperty("_campgroundFuel", 10),
+              withAsdonMartinFuel(10),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("asdonmartin drive")))));
       }
     }
   }
@@ -381,26 +402,31 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class MayoClinic {
     @Test
-    public void exercisesMayoSoakPath() {
+    public void suggestsMayoSoakWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withWorkshedItem(ItemPool.MAYO_CLINIC),
               withProperty("_mayoTankSoaked", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Force of Mayo Be With You provides resistances
+        assertTrue(maximize("hot res"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mayosoak"))));
       }
     }
 
     @Test
-    public void exercisesMayoSoakUsed() {
+    public void doesNotSuggestMayoSoakWhenUsed() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withWorkshedItem(ItemPool.MAYO_CLINIC),
               withProperty("_mayoTankSoaked", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        assertTrue(maximize("hot res"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("mayosoak")))));
       }
     }
   }
@@ -408,7 +434,7 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Witchess {
     @Test
-    public void exercisesWitchessPath() {
+    public void suggestsWitchessWhenAvailableWithPuzzleBonus() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.WITCHESS_SET),
@@ -416,12 +442,14 @@ public class MaximizerEffectSourcesTest {
               withProperty("puzzleChampBonus", 20),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        // Puzzle Champ provides Familiar Weight
+        assertTrue(maximize("familiar weight"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("witchess"))));
       }
     }
 
     @Test
-    public void exercisesWitchessUsed() {
+    public void doesNotSuggestWitchessWhenUsed() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.WITCHESS_SET),
@@ -429,12 +457,13 @@ public class MaximizerEffectSourcesTest {
               withProperty("puzzleChampBonus", 20),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("familiar weight"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("witchess")))));
       }
     }
 
     @Test
-    public void exercisesWitchessNoPuzzleBonus() {
+    public void doesNotSuggestWitchessWhenNoPuzzleBonus() {
       var cleanups =
           new Cleanups(
               withCampgroundItem(ItemPool.WITCHESS_SET),
@@ -442,7 +471,8 @@ public class MaximizerEffectSourcesTest {
               withProperty("puzzleChampBonus", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("familiar weight"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("witchess")))));
       }
     }
   }
@@ -450,38 +480,43 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class BeachComb {
     @Test
-    public void exercisesBeachHeadPath() {
+    public void suggestsBeachHeadWhenAvailable() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.BEACH_COMB),
               withProperty("_beachHeadsUsed", ""),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Use "cold res" to target beach head effect rather than comb as equip
+        assertTrue(maximize("cold res"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("beach head"))));
       }
     }
 
     @Test
-    public void exercisesDriftwoodBeachComb() {
+    public void suggestsBeachHeadWithDriftwoodComb() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.DRIFTWOOD_BEACH_COMB),
               withProperty("_beachHeadsUsed", ""),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Use "cold res" to target beach head effect rather than comb as equip
+        assertTrue(maximize("cold res"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("beach head"))));
       }
     }
 
     @Test
-    public void exercisesBeachHeadUsed() {
+    public void doesNotSuggestBeachHeadWhenAllUsed() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.BEACH_COMB),
               withProperty("_beachHeadsUsed", "1,2,3,4,5,6,7,8,9,10,11"),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("cold res"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("beach head")))));
       }
     }
   }
@@ -489,26 +524,29 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class GrimBrother {
     @Test
-    public void exercisesGrimPath() {
+    public void suggestsGrimWhenAvailable() {
       var cleanups =
           new Cleanups(
               withFamiliarInTerrarium(FamiliarPool.GRIM_BROTHER),
               withProperty("_grimBuff", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        // Grim effects: init, hpmp, damage - use init
+        assertTrue(maximize("init"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("grim"))));
       }
     }
 
     @Test
-    public void exercisesGrimUsed() {
+    public void doesNotSuggestGrimWhenUsed() {
       var cleanups =
           new Cleanups(
               withFamiliarInTerrarium(FamiliarPool.GRIM_BROTHER),
               withProperty("_grimBuff", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("init"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("grim")))));
       }
     }
   }
@@ -516,26 +554,28 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class DeckOfEveryCard {
     @Test
-    public void exercisesDeckPath() {
+    public void suggestsDeckPlayWhenAvailable() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.DECK_OF_EVERY_CARD),
               withProperty("_deckCardsDrawn", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("play"))));
       }
     }
 
     @Test
-    public void exercisesDeckUsedUp() {
+    public void doesNotSuggestDeckPlayWhenUsedUp() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.DECK_OF_EVERY_CARD),
               withProperty("_deckCardsDrawn", 15),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("play")))));
       }
     }
   }
@@ -543,26 +583,29 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class ProtonAccelerator {
     @Test
-    public void exercisesCrossStreamsPath() {
+    public void suggestsCrossStreamsWhenAvailable() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.PROTON_ACCELERATOR),
               withProperty("_streamsCrossed", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("all res");
+        // Total Protonic Reversal gives stat percents, not resistances
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("crossstreams"))));
       }
     }
 
     @Test
-    public void exercisesCrossStreamsUsed() {
+    public void doesNotSuggestCrossStreamsWhenUsed() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.PROTON_ACCELERATOR),
               withProperty("_streamsCrossed", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("all res");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("crossstreams")))));
       }
     }
   }
@@ -570,19 +613,21 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Monorail {
     @Test
-    public void exercisesMonorailPath() {
-      var cleanups =
-          new Cleanups(withProperty("_lyleFavored", false), withStats(100, 100, 100));
+    public void suggestsMonorailWhenAvailable() {
+      var cleanups = new Cleanups(withProperty("_lyleFavored", false), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("init");
+        // Favored by Lyle provides Muscle/Mysticality/Moxie Percent, not init
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("monorail"))));
       }
     }
 
     @Test
-    public void exercisesMonorailUsed() {
+    public void doesNotSuggestMonorailWhenUsed() {
       var cleanups = new Cleanups(withProperty("_lyleFavored", true), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("init");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("monorail")))));
       }
     }
   }
@@ -590,19 +635,20 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class BoxingDaycare {
     @Test
-    public void exercisesDaycarePath() {
+    public void suggestsDaycareWhenOpen() {
       var cleanups =
           new Cleanups(
               withProperty("daycareOpen", true),
               withProperty("_daycareSpa", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("daycare"))));
       }
     }
 
     @Test
-    public void exercisesDaycareToday() {
+    public void suggestsDaycareWhenOpenToday() {
       var cleanups =
           new Cleanups(
               withProperty("daycareOpen", false),
@@ -610,19 +656,21 @@ public class MaximizerEffectSourcesTest {
               withProperty("_daycareSpa", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("daycare"))));
       }
     }
 
     @Test
-    public void exercisesDaycareUsed() {
+    public void doesNotSuggestDaycareWhenSpaUsed() {
       var cleanups =
           new Cleanups(
               withProperty("daycareOpen", true),
               withProperty("_daycareSpa", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("daycare")))));
       }
     }
   }
@@ -630,38 +678,42 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class GreatestAmericanPants {
     @Test
-    public void exercisesGAPPath() {
+    public void suggestsGAPWhenEquippedWithUses() {
       var cleanups =
           new Cleanups(
               withEquipped(Slot.PANTS, "Greatest American Pants"),
               withProperty("_gapBuffs", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        // Super Speed gives Moxie Percent +100
+        assertTrue(maximize("mox"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("gap"))));
       }
     }
 
     @Test
-    public void exercisesGAPUsedUp() {
+    public void doesNotSuggestGAPWhenUsedUp() {
       var cleanups =
           new Cleanups(
               withEquipped(Slot.PANTS, "Greatest American Pants"),
               withProperty("_gapBuffs", 5),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mox"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("gap")))));
       }
     }
 
     @Test
-    public void exercisesGAPNotEquipped() {
+    public void doesNotSuggestGAPCommandWhenNotEquipped() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.GREAT_PANTS),
               withProperty("_gapBuffs", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        assertTrue(maximize("mox"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("gap")))));
       }
     }
   }
@@ -669,26 +721,29 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class CampAway {
     @Test
-    public void exercisesCampAwayPath() {
+    public void suggestsCampAwayCloudWhenAvailable() {
       var cleanups =
           new Cleanups(
               withProperty("_campAwayCloudBuffs", 0),
               withProperty("getawayCampsiteUnlocked", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("adv");
+        // Cloud-Talk gives Experience Percent, not Adventures
+        assertTrue(maximize("exp"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("campaway cloud"))));
       }
     }
 
     @Test
-    public void exercisesCampAwayUsed() {
+    public void doesNotSuggestCampAwayCloudWhenUsed() {
       var cleanups =
           new Cleanups(
               withProperty("_campAwayCloudBuffs", 1),
               withProperty("getawayCampsiteUnlocked", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("adv");
+        assertTrue(maximize("exp"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("campaway cloud")))));
       }
     }
   }
@@ -696,26 +751,28 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class MonkeyPaw {
     @Test
-    public void exercisesMonkeyPawPath() {
+    public void suggestsMonkeyPawWhenAvailable() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.CURSED_MONKEY_PAW),
               withProperty("_monkeyPawWishesUsed", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("monkeypaw effect"))));
       }
     }
 
     @Test
-    public void exercisesMonkeyPawUsedUp() {
+    public void doesNotSuggestMonkeyPawWhenUsedUp() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.CURSED_MONKEY_PAW),
               withProperty("_monkeyPawWishesUsed", 5),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("monkeypaw effect")))));
       }
     }
   }
@@ -723,38 +780,41 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class GenieBottle {
     @Test
-    public void exercisesGenieBottlePath() {
+    public void suggestsGenieWhenBottleAvailable() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.GENIE_BOTTLE),
               withProperty("_genieWishesUsed", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("genie effect"))));
       }
     }
 
     @Test
-    public void exercisesGenieBottleUsedUp() {
+    public void doesNotSuggestGenieWhenBottleUsedUp() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.GENIE_BOTTLE),
               withProperty("_genieWishesUsed", 3),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("genie effect")))));
       }
     }
 
     @Test
-    public void exercisesPocketWishPath() {
+    public void suggestsGenieWithPocketWish() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.POCKET_WISH),
               withProperty("_genieWishesUsed", 3),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("genie effect"))));
       }
     }
   }
@@ -762,38 +822,49 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Telescope {
     @Test
-    public void exercisesTelescopePath() {
+    public void suggestsTelescopeWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("telescopeUpgrades", 5),
               withProperty("telescopeLookedHigh", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        // Also set the field since modifier expression [+5*U] reads from the field
+        KoLCharacter.setTelescopeUpgrades(5);
+        // Starry-Eyed provides Muscle/Mys/Moxie Percent, not flat stats
+        assertTrue(maximize("mus percent"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("telescope"))));
       }
     }
 
     @Test
-    public void exercisesTelescopeUsed() {
+    public void doesNotSuggestTelescopeWhenUsed() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("telescopeUpgrades", 5),
               withProperty("telescopeLookedHigh", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        KoLCharacter.setTelescopeUpgrades(5);
+        assertTrue(maximize("mus percent"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("telescope")))));
       }
     }
 
     @Test
-    public void exercisesTelescopeNoUpgrades() {
+    public void doesNotSuggestTelescopeWhenNoUpgrades() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("telescopeUpgrades", 0),
               withProperty("telescopeLookedHigh", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("mus");
+        KoLCharacter.setTelescopeUpgrades(0);
+        assertTrue(maximize("mus percent"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("telescope")))));
       }
     }
   }
@@ -801,18 +872,25 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Ballpit {
     @Test
-    public void exercisesBallpitPath() {
-      var cleanups = new Cleanups(withProperty("_ballpit", false), withStats(100, 100, 100));
+    public void suggestsBallpitWhenAvailableAndCanInteract() {
+      var cleanups =
+          new Cleanups(
+              withProperty("_ballpit", false), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("stat");
+        // Having a Ball! provides stat percent bonuses
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("ballpit"))));
       }
     }
 
     @Test
-    public void exercisesBallpitUsed() {
-      var cleanups = new Cleanups(withProperty("_ballpit", true), withStats(100, 100, 100));
+    public void doesNotSuggestBallpitWhenUsed() {
+      var cleanups =
+          new Cleanups(
+              withProperty("_ballpit", true), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("stat");
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("ballpit")))));
       }
     }
   }
@@ -820,18 +898,24 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Jukebox {
     @Test
-    public void exercisesJukeboxPath() {
-      var cleanups = new Cleanups(withProperty("_jukebox", false), withStats(100, 100, 100));
+    public void suggestsJukeboxWhenAvailableAndCanInteract() {
+      var cleanups =
+          new Cleanups(
+              withProperty("_jukebox", false), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("jukebox"))));
       }
     }
 
     @Test
-    public void exercisesJukeboxUsed() {
-      var cleanups = new Cleanups(withProperty("_jukebox", true), withStats(100, 100, 100));
+    public void doesNotSuggestJukeboxWhenUsed() {
+      var cleanups =
+          new Cleanups(
+              withProperty("_jukebox", true), withInteractivity(true), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("jukebox")))));
       }
     }
   }
@@ -839,41 +923,48 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Friars {
     @Test
-    public void exercisesFriarsPath() {
+    public void suggestsFriarsWhenUnlockedAndAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("lastFriarCeremonyAscension", 1),
               withProperty("knownAscensions", 1),
               withProperty("friarsBlessingReceived", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Brother Flying Burrito's Blessing provides Food Drop +30
+        assertTrue(maximize("food drop"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("friars"))));
       }
     }
 
     @Test
-    public void exercisesFriarsUsed() {
+    public void doesNotSuggestFriarsWhenUsed() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("lastFriarCeremonyAscension", 1),
               withProperty("knownAscensions", 1),
               withProperty("friarsBlessingReceived", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        assertTrue(maximize("food drop"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("friars")))));
       }
     }
 
     @Test
-    public void exercisesFriarsNotUnlocked() {
+    public void doesNotSuggestFriarsWhenNotUnlocked() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withProperty("lastFriarCeremonyAscension", 0),
               withProperty("knownAscensions", 1),
               withProperty("friarsBlessingReceived", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        assertTrue(maximize("food drop"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("friars")))));
       }
     }
   }
@@ -881,26 +972,33 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class BarrelShrine {
     @Test
-    public void exercisesBarrelPrayerPath() {
+    public void suggestsBarrelPrayerWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withClass(AscensionClass.SEAL_CLUBBER),
+              withRestricted(false),
               withProperty("barrelShrineUnlocked", true),
               withProperty("_barrelPrayer", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        // Barrel Chested provides Weapon Damage Percent +150 (only for Seal Clubbers)
+        assertTrue(maximize("weapon damage percent"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("barrelprayer"))));
       }
     }
 
     @Test
-    public void exercisesBarrelPrayerUsed() {
+    public void doesNotSuggestBarrelPrayerWhenUsed() {
       var cleanups =
           new Cleanups(
+              withClass(AscensionClass.SEAL_CLUBBER),
+              withRestricted(false),
               withProperty("barrelShrineUnlocked", true),
               withProperty("_barrelPrayer", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("weapon damage percent"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("barrelprayer")))));
       }
     }
   }
@@ -908,26 +1006,32 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class PillKeeper {
     @Test
-    public void exercisesPillKeeperPath() {
+    public void suggestsPillKeeperWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.PILL_KEEPER),
               withProperty("_freePillKeeperUsed", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Hulkien provides stat percents, Rainbowolin provides resistances
+        assertTrue(maximize("mus percent"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("pillkeeper"))));
       }
     }
 
     @Test
-    public void exercisesPillKeeperAfterFreeUse() {
+    public void suggestsPillKeeperAfterFreeUseIfSpleenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.PILL_KEEPER),
               withProperty("_freePillKeeperUsed", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Hulkien provides stat percents
+        assertTrue(maximize("mus percent"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("pillkeeper"))));
       }
     }
   }
@@ -935,26 +1039,28 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class CargoShorts {
     @Test
-    public void exercisesCargoShortsPath() {
+    public void suggestsCargoEffectWhenAvailable() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.CARGO_CULTIST_SHORTS),
               withProperty("_cargoPocketEmptied", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("cargo effect"))));
       }
     }
 
     @Test
-    public void exercisesCargoShortsUsed() {
+    public void doesNotSuggestCargoEffectWhenUsed() {
       var cleanups =
           new Cleanups(
               withItem(ItemPool.CARGO_CULTIST_SHORTS),
               withProperty("_cargoPocketEmptied", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("cargo effect")))));
       }
     }
   }
@@ -962,26 +1068,32 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class AlliedRadio {
     @Test
-    public void exercisesAlliedRadioPath() {
+    public void suggestsAlliedRadioWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.HANDHELD_ALLIED_RADIO),
               withProperty("_alliedRadioDropsUsed", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Materiel Intel provides Item Drop +100
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("alliedradio effect"))));
       }
     }
 
     @Test
-    public void exercisesAlliedRadioBackpack() {
+    public void suggestsAlliedRadioWithBackpack() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withEquipped(Slot.CONTAINER, ItemPool.ALLIED_RADIO_BACKPACK),
               withProperty("_alliedRadioDropsUsed", 0),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Materiel Intel provides Item Drop +100
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("alliedradio effect"))));
       }
     }
   }
@@ -989,13 +1101,11 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class SweetSynthesis {
     @Test
-    public void exercisesSynthesisPath() {
-      var cleanups =
-          new Cleanups(
-              withSkill("Sweet Synthesis"),
-              withStats(100, 100, 100));
+    public void suggestsSynthesizeWhenSkillKnown() {
+      var cleanups = new Cleanups(withSkill("Sweet Synthesis"), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        assertTrue(maximize("exp"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("synthesize"))));
       }
     }
   }
@@ -1003,13 +1113,16 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class AprilingBand {
     @Test
-    public void exercisesAprilBandPath() {
+    public void suggestsAprilBandWhenAvailable() {
       var cleanups =
           new Cleanups(
+              withRestricted(false),
               withItem(ItemPool.APRILING_BAND_HELMET),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Apriling Band Celebration Bop provides Food Drop +50
+        assertTrue(maximize("food drop"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("aprilband"))));
       }
     }
   }
@@ -1017,13 +1130,14 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class MayamCalendar {
     @Test
-    public void exercisesMayamPath() {
+    public void suggestsMayamWhenAvailable() {
       var cleanups =
           new Cleanups(
-              withItem(ItemPool.MAYAM_CALENDAR),
-              withStats(100, 100, 100));
+              withRestricted(false), withItem(ItemPool.MAYAM_CALENDAR), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("exp");
+        // Memories of Cheesier Age provides Food Drop +100
+        assertTrue(maximize("food drop"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("mayam"))));
       }
     }
   }
@@ -1031,32 +1145,33 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class ToggleEffects {
     @Test
-    public void exercisesToggleWithIntenselyInterested() {
+    public void suggestsToggleWhenIntenselyInterested() {
       var cleanups =
-          new Cleanups(
-              withEffect("Intensely Interested"),
-              withStats(100, 100, 100));
+          new Cleanups(withEffect("Become Intensely interested"), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        // Intensely interested gives +5 combat, toggle to get -5 combat
+        assertTrue(maximize("-combat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("toggle"))));
       }
     }
 
     @Test
-    public void exercisesToggleWithSuperficiallyInterested() {
+    public void suggestsToggleWhenSuperficiallyInterested() {
       var cleanups =
-          new Cleanups(
-              withEffect("Superficially Interested"),
-              withStats(100, 100, 100));
+          new Cleanups(withEffect("Become Superficially interested"), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Superficially interested gives -5 combat, toggle to get +5 combat
+        assertTrue(maximize("combat"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("toggle"))));
       }
     }
 
     @Test
-    public void exercisesToggleWithoutEffect() {
+    public void doesNotSuggestToggleWithoutEffect() {
       var cleanups = new Cleanups(withStats(100, 100, 100));
       try (cleanups) {
-        maximize("item");
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("toggle")))));
       }
     }
   }
@@ -1064,7 +1179,7 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class EmitSlot {
     @Test
-    public void exercisesEnthroning() {
+    public void suggestsEnthroningFamiliar() {
       var cleanups =
           new Cleanups(
               withEquippableItem("Crown of Thrones"),
@@ -1072,12 +1187,13 @@ public class MaximizerEffectSourcesTest {
               withFamiliarInTerrarium(FamiliarPool.LEPRECHAUN),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "Crown of Thrones")));
       }
     }
 
     @Test
-    public void exercisesBjornifying() {
+    public void suggestsBjornifyingFamiliar() {
       var cleanups =
           new Cleanups(
               withEquippableItem("Buddy Bjorn"),
@@ -1085,18 +1201,17 @@ public class MaximizerEffectSourcesTest {
               withFamiliarInTerrarium(FamiliarPool.LEPRECHAUN),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.CONTAINER, "Buddy Bjorn")));
       }
     }
 
     @Test
-    public void exercisesModeableItems() {
-      var cleanups =
-          new Cleanups(
-              withEquippableItem("backup camera"),
-              withStats(100, 100, 100));
+    public void suggestsModeableItems() {
+      var cleanups = new Cleanups(withEquippableItem("backup camera"), withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("init"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.ACCESSORY1, "backup camera")));
       }
     }
   }
@@ -1104,7 +1219,7 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Spacegate {
     @Test
-    public void exercisesSpacegatePath() {
+    public void suggestsSpacegateWhenAlwaysAvailable() {
       var cleanups =
           new Cleanups(
               withProperty("spacegateAlways", true),
@@ -1112,12 +1227,14 @@ public class MaximizerEffectSourcesTest {
               withProperty("_spacegateVaccine", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Rainbow Vaccine provides elemental resistances
+        assertTrue(maximize("cold res"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("spacegate"))));
       }
     }
 
     @Test
-    public void exercisesSpacegateToday() {
+    public void suggestsSpacegateWhenAvailableToday() {
       var cleanups =
           new Cleanups(
               withProperty("spacegateAlways", false),
@@ -1126,12 +1243,14 @@ public class MaximizerEffectSourcesTest {
               withProperty("_spacegateVaccine", false),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Broad-Spectrum Vaccine provides stat percents
+        assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("spacegate"))));
       }
     }
 
     @Test
-    public void exercisesSpacegateUsed() {
+    public void doesNotSuggestSpacegateWhenUsed() {
       var cleanups =
           new Cleanups(
               withProperty("spacegateAlways", true),
@@ -1139,7 +1258,8 @@ public class MaximizerEffectSourcesTest {
               withProperty("_spacegateVaccine", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        assertTrue(maximize("cold res"));
+        assertThat(getBoosts(), not(hasItem(hasProperty("cmd", startsWith("spacegate")))));
       }
     }
   }
@@ -1147,13 +1267,13 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class LoathingIdol {
     @Test
-    public void exercisesLoathingIdolPath() {
+    public void suggestsLoathingIdolWhenAvailable() {
       var cleanups =
-          new Cleanups(
-              withItem(ItemPool.LOATHING_IDOL_MICROPHONE),
-              withStats(100, 100, 100));
+          new Cleanups(withItem(ItemPool.LOATHING_IDOL_MICROPHONE), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("meat");
+        // Spitting Rhymes provides Item Drop: +50
+        assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("loathingidol"))));
       }
     }
   }
@@ -1161,13 +1281,12 @@ public class MaximizerEffectSourcesTest {
   @Nested
   class Skeleton {
     @Test
-    public void exercisesSkeletonPath() {
-      var cleanups =
-          new Cleanups(
-              withItem(ItemPool.SKELETON),
-              withStats(100, 100, 100));
+    public void suggestsSkeletonWhenAvailable() {
+      var cleanups = new Cleanups(withItem(ItemPool.SKELETON), withStats(100, 100, 100));
       try (cleanups) {
-        maximize("spooky res");
+        // Skeletal Buddy provides Experience: +2
+        assertTrue(maximize("exp"));
+        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("skeleton"))));
       }
     }
   }
