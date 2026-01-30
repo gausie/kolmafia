@@ -9,7 +9,6 @@ import static internal.helpers.Player.withEquippableItem;
 import static internal.helpers.Player.withEquipped;
 import static internal.helpers.Player.withFamiliar;
 import static internal.helpers.Player.withFamiliarInTerrarium;
-import static internal.helpers.Player.withHardcore;
 import static internal.helpers.Player.withItem;
 import static internal.helpers.Player.withItemInFreepulls;
 import static internal.helpers.Player.withItemInStorage;
@@ -66,7 +65,7 @@ public class MaximizerEnumerationTest {
       var cleanups = new Cleanups(withEquippableItem("hand in glove", 3));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        // Should be able to fill multiple accessory slots
+        assertThat(getBoosts(), hasItem(recommends("Hand in Glove")));
       }
     }
   }
@@ -89,7 +88,7 @@ public class MaximizerEnumerationTest {
               withItem("helmet turtle"), withItem("seal-skull helmet"), withStats(100, 100, 100));
       try (cleanups) {
         maximizeCreatable("mus");
-        // Should consider creatable items in addition to on-hand
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT)));
       }
     }
 
@@ -98,7 +97,7 @@ public class MaximizerEnumerationTest {
       var cleanups = new Cleanups(withEquippableItem("helmet turtle"));
       try (cleanups) {
         maximizeAny("mus");
-        // Should consider mall items
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
       }
     }
   }
@@ -205,7 +204,7 @@ public class MaximizerEnumerationTest {
       var cleanups = new Cleanups(withEquippableItem("hand in glove", 3));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        // With 3 copies, should fill all accessory slots
+        assertThat(getBoosts(), hasItem(recommends("Hand in Glove")));
       }
     }
 
@@ -291,7 +290,7 @@ public class MaximizerEnumerationTest {
               withStats(100, 100, 100));
       try (cleanups) {
         assertTrue(maximize("da, shield"));
-        // Umbrella in forward-facing mode acts as shield
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.OFFHAND, "unbreakable umbrella")));
       }
     }
   }
@@ -315,9 +314,8 @@ public class MaximizerEnumerationTest {
       var cleanups =
           new Cleanups(withEquipped(Slot.ACCESSORY1, "Mr. Accessory"), withStats(0, 0, 0));
       try (cleanups) {
-        // Mr. Accessory is equipped but we don't have stats to re-equip
-        // Should still consider it as currently worn
         assertTrue(maximize("all res, current"));
+        assertTrue(modFor(DerivedModifier.BUFFED_MUS) > 0);
       }
     }
   }
@@ -326,11 +324,10 @@ public class MaximizerEnumerationTest {
   class StorageItems {
     @Test
     public void findsItemsInStorage() {
-      var cleanups = new Cleanups(withItemInStorage("helmet turtle"), withHardcore());
+      var cleanups = new Cleanups(withItemInStorage("helmet turtle"));
       try (cleanups) {
-        // In hardcore, storage items can be considered for pullable scope
         maximizeAny("mus");
-        // Just verify no error - storage access depends on game state
+        assertThat(getBoosts(), hasItem(recommends("helmet turtle")));
       }
     }
 
@@ -338,8 +335,8 @@ public class MaximizerEnumerationTest {
     public void findsItemsInFreepulls() {
       var cleanups = new Cleanups(withItemInFreepulls("helmet turtle"));
       try (cleanups) {
-        assertTrue(maximize("mus"));
-        // Free pulls should be considered
+        maximizeAny("mus");
+        assertThat(getBoosts(), hasItem(recommends("helmet turtle")));
       }
     }
   }
@@ -355,7 +352,7 @@ public class MaximizerEnumerationTest {
               withProperty("maximizerCombinationLimit", 100));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        // With a low limit, should still find some results
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
       }
     }
 
@@ -368,14 +365,13 @@ public class MaximizerEnumerationTest {
               withProperty("maximizerCombinationLimit", 0));
       try (cleanups) {
         assertTrue(maximize("mus"));
-        // With no limit (0), should check all combinations
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.PANTS, "old sweatpants")));
       }
     }
 
     @Test
     public void veryLowLimitStillFindsResult() {
-      // This test exercises the MaximizerLimitException path by setting a limit of 1
-      // which should stop after checking just one combination but still return a result
       var cleanups =
           new Cleanups(
               withEquippableItem("helmet turtle"),
@@ -383,8 +379,8 @@ public class MaximizerEnumerationTest {
               withEquippableItem("eyepatch"),
               withProperty("maximizerCombinationLimit", 1));
       try (cleanups) {
-        // Should still succeed even with very low limit
         assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT)));
       }
     }
   }
@@ -399,8 +395,8 @@ public class MaximizerEnumerationTest {
               withFamiliarInTerrarium(FamiliarPool.LEPRECHAUN),
               withEquippableItem("Crown of Thrones"));
       try (cleanups) {
-        // Crown of Thrones allows enthroning a familiar
         assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "Crown of Thrones")));
       }
     }
 
@@ -412,8 +408,8 @@ public class MaximizerEnumerationTest {
               withFamiliarInTerrarium(FamiliarPool.LEPRECHAUN),
               withEquippableItem("Buddy Bjorn"));
       try (cleanups) {
-        // Buddy Bjorn allows carrying a familiar
         assertTrue(maximize("meat"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.CONTAINER, "Buddy Bjorn")));
       }
     }
   }
@@ -429,7 +425,6 @@ public class MaximizerEnumerationTest {
               withEquippableItem("hodgman's bow tie"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // Hobo power items have synergy
         assertTrue(maximize("hobo power"));
       }
     }
@@ -443,8 +438,9 @@ public class MaximizerEnumerationTest {
               withSkill("Torso Awareness"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // Smithsness items have synergy
         assertTrue(maximize("smithsness"));
+        assertThat(getBoosts(), hasItem(recommends("Vicar's Tutu")));
+        assertThat(getBoosts(), hasItem(recommends("Hand in Glove")));
       }
     }
   }
@@ -452,13 +448,12 @@ public class MaximizerEnumerationTest {
   @Nested
   class BeeosityFiltering {
     @Test
-    public void filtersHighBeeosityItemsInBeecore() {
-      // In Beecore, items with many B's in the name are restricted
+    public void considersAllItemsOutsideBeecore() {
       var cleanups =
           new Cleanups(withEquippableItem("helmet turtle"), withEquippableItem("bugbear beanie"));
       try (cleanups) {
-        // Without being in beecore, both should be considered
         assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
       }
     }
   }
