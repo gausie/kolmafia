@@ -7,6 +7,7 @@ import net.sourceforge.kolmafia.KoLConstants.filterType;
 import net.sourceforge.kolmafia.ModifierType;
 import net.sourceforge.kolmafia.maximizer.Boost;
 import net.sourceforge.kolmafia.maximizer.EquipScope;
+import net.sourceforge.kolmafia.maximizer.MaximizerSpeculation;
 import net.sourceforge.kolmafia.maximizer.PriceLevel;
 import net.sourceforge.kolmafia.modifiers.Modifier;
 import net.sourceforge.kolmafia.persistence.ModifierDatabase;

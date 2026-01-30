@@ -89,9 +89,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("seal-skull helmet"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // When tied, should prefer currently equipped item
         assertTrue(maximize("mus, current"));
-        // The already-equipped helmet turtle should be preferred
+        assertEquals(101, modFor(DerivedModifier.BUFFED_MUS), 0.01);
       }
     }
 
@@ -154,9 +153,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("seal-skull helmet"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // When tied on score and tiebreaker, prefer fewer changes
         assertTrue(maximize("mus, current"));
-        // Already wearing helmet turtle, so should keep it
+        assertEquals(101, modFor(DerivedModifier.BUFFED_MUS), 0.01);
       }
     }
 
@@ -182,9 +180,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("seal-skull helmet"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // When tied, should prefer unbreakable items
         assertTrue(maximize("mus"));
-        // Both helmets are non-breakable in this case
+        assertEquals(101, modFor(DerivedModifier.BUFFED_MUS), 0.01);
       }
     }
   }
@@ -214,9 +211,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("seal-skull helmet"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // When tied, prefer items that don't need to be bought
         assertTrue(maximize("mus"));
-        // Both are in inventory (not bought)
+        assertEquals(101, modFor(DerivedModifier.BUFFED_MUS), 0.01);
       }
     }
   }
@@ -227,9 +223,8 @@ public class MaximizerSpeculationTest {
     public void detectsMutexViolations() {
       var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
-        // Mutex items should cause failure if worn together
         assertTrue(maximize("mus"));
-        // Just verify it completes
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
       }
     }
   }
@@ -305,9 +300,8 @@ public class MaximizerSpeculationTest {
     public void tracksMultipleCopiesOfSameItem() {
       var cleanups = new Cleanups(withEquippableItem("hand in glove", 3));
       try (cleanups) {
-        // With 3 copies, should be able to fill all accessory slots
         assertTrue(maximize("mus"));
-        // Verify it completes
+        assertThat(modFor(DerivedModifier.BUFFED_MUS), greaterThan(0.0));
       }
     }
 
@@ -319,8 +313,8 @@ public class MaximizerSpeculationTest {
               withProperty("maximizerFoldables", true),
               withSkill("Torso Awareness"));
       try (cleanups) {
-        // Foldable items share count
         assertTrue(maximize("mox"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.SHIRT, "origami pasties")));
       }
     }
   }
@@ -328,13 +322,11 @@ public class MaximizerSpeculationTest {
   @Nested
   class ChefstaffHandling {
     @Test
-    public void chefstaffWithoutGloveOrSkillFails() {
+    public void chefstaffWithoutGloveOrSkillNotRecommended() {
       var cleanups =
           new Cleanups(withEquippableItem("Staff of Simmering Hatred"), withStats(100, 100, 100));
       try (cleanups) {
-        // Without Sauce Glove or Spirit of Rigatoni, chefstaff not usable
         assertTrue(maximize("spell dmg"));
-        // May or may not recommend staff depending on character class
       }
     }
 
@@ -346,7 +338,6 @@ public class MaximizerSpeculationTest {
               withSkill("Spirit of Rigatoni"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // With Spirit of Rigatoni, chefstaff is usable
         assertTrue(maximize("spell dmg"));
       }
     }
@@ -379,9 +370,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("helmet turtle"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // When tied on score, should prefer items that drop meat
         assertTrue(maximize("mus"));
-        // Check that it completes
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT)));
       }
     }
   }
@@ -392,9 +382,8 @@ public class MaximizerSpeculationTest {
     public void handlesExceededMax() {
       var cleanups = new Cleanups(withEquippableItem("helmet turtle"), withStats(100, 100, 100));
       try (cleanups) {
-        // Max constraint tests exceeded behavior
         assertTrue(maximize("mus 50 max"));
-        // Should succeed but cap the score
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "helmet turtle")));
       }
     }
   }
@@ -405,8 +394,8 @@ public class MaximizerSpeculationTest {
     public void handlesNullEquipment() {
       var cleanups = new Cleanups(withStats(100, 100, 100));
       try (cleanups) {
-        // No equipment to maximize, should handle gracefully
         assertTrue(maximize("mus"));
+        assertEquals(100, modFor(DerivedModifier.BUFFED_MUS), 0.01);
       }
     }
   }
@@ -421,9 +410,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("filthy knitted dread sack"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // Item with familiar weight penalty should affect scoring
         assertTrue(maximize("item"));
-        // Verify completion
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "filthy knitted dread sack")));
       }
     }
   }
@@ -434,7 +422,6 @@ public class MaximizerSpeculationTest {
     public void accountsForStackableMana() {
       var cleanups = new Cleanups(withEquippableItem("wizard hat"), withStats(100, 100, 100));
       try (cleanups) {
-        // Mana cost modifiers should be accounted for
         assertTrue(maximize("-mana cost"));
       }
     }
@@ -446,8 +433,8 @@ public class MaximizerSpeculationTest {
     public void accountsForInitiativePenalty() {
       var cleanups = new Cleanups(withEquippableItem("old sweatpants"), withStats(100, 100, 100));
       try (cleanups) {
-        // Initiative penalty should be factored in
         assertTrue(maximize("init"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.PANTS, "old sweatpants")));
       }
     }
   }
@@ -455,10 +442,9 @@ public class MaximizerSpeculationTest {
   @Nested
   class MeatdropHandling {
     @Test
-    public void accountsForMeatdropPenalty() {
+    public void accountsForMeatdrop() {
       var cleanups = new Cleanups(withEquippableItem("meat detector"), withStats(100, 100, 100));
       try (cleanups) {
-        // Meatdrop modifiers should be accounted for
         assertTrue(maximize("meat"));
       }
     }
@@ -467,12 +453,12 @@ public class MaximizerSpeculationTest {
   @Nested
   class ItemdropHandling {
     @Test
-    public void accountsForItemdropPenalty() {
+    public void accountsForItemdrop() {
       var cleanups =
           new Cleanups(withEquippableItem("bounty-hunting helmet"), withStats(100, 100, 100));
       try (cleanups) {
-        // Itemdrop modifiers should be accounted for
         assertTrue(maximize("item"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "bounty-hunting helmet")));
       }
     }
   }
@@ -487,8 +473,8 @@ public class MaximizerSpeculationTest {
               withEquippableItem("bounty-hunting helmet"),
               withStats(100, 100, 100));
       try (cleanups) {
-        // When comparing attachments, should prefer non-buyable
         assertTrue(maximize("mus"));
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT)));
       }
     }
   }
