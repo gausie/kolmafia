@@ -1021,12 +1021,14 @@ public class MaximizerEffectSourcesTest {
     public void suggestsPillKeeperAfterFreeUseIfSpleenAvailable() {
       var cleanups =
           new Cleanups(
+              withClass(AscensionClass.TURTLE_TAMER),
               withRestricted(false),
               withItem(ItemPool.PILL_KEEPER),
               withProperty("_freePillKeeperUsed", true),
               withStats(100, 100, 100));
       try (cleanups) {
-        // Hulkien provides stat percents
+        // Hulkien provides stat percents. After free use, pillkeeper costs 3 spleen,
+        // so we need a class that has spleen capacity.
         assertTrue(maximize("mus percent"));
         assertThat(getBoosts(), hasItem(hasProperty("cmd", equalTo("pillkeeper stat"))));
       }
@@ -1099,10 +1101,18 @@ public class MaximizerEffectSourcesTest {
   class SweetSynthesis {
     @Test
     public void suggestsSynthesizeWhenSkillKnown() {
-      var cleanups = new Cleanups(withSkill("Sweet Synthesis"), withStats(100, 100, 100));
+      var cleanups =
+          new Cleanups(
+              withClass(AscensionClass.TURTLE_TAMER),
+              withSkill("Sweet Synthesis"),
+              // Two complex candies (candy2) for tier 3 synthesis (Synthesis: Learning)
+              withItem(ItemPool.FANCY_CHOCOLATE, 2),
+              withStats(100, 100, 100));
       try (cleanups) {
-        assertTrue(maximize("exp"));
-        assertThat(getBoosts(), hasItem(hasProperty("cmd", startsWith("synthesize"))));
+        // Synthesis: Learning provides +50% mys experience
+        assertTrue(maximize("mys exp percent"));
+        assertThat(
+            getBoosts(), hasItem(hasProperty("cmd", equalTo("synthesize Synthesis: Learning"))));
       }
     }
   }
