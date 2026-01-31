@@ -14,6 +14,9 @@ import static internal.matchers.Maximizer.recommendsSlot;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,6 +26,7 @@ import net.sourceforge.kolmafia.KoLCharacter;
 import net.sourceforge.kolmafia.equipment.Slot;
 import net.sourceforge.kolmafia.modifiers.DerivedModifier;
 import net.sourceforge.kolmafia.objectpool.FamiliarPool;
+import net.sourceforge.kolmafia.objectpool.ItemPool;
 import net.sourceforge.kolmafia.preferences.Preferences;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -298,23 +302,45 @@ public class MaximizerSpeculationTest {
   class CountTracking {
     @Test
     public void tracksMultipleCopiesOfSameItem() {
-      var cleanups = new Cleanups(withEquippableItem("hand in glove", 3));
+      // With 3 shiny rings (+3 mus each), maximizer should recommend all 3 accessory slots
+      var cleanups = new Cleanups(withEquippableItem("shiny ring", 3), withStats(100, 100, 100));
       try (cleanups) {
-        assertTrue(maximize("mus"));
-        assertThat(modFor(DerivedModifier.BUFFED_MUS), greaterThan(0.0));
+        maximize("mus");
+        var rings =
+            getBoosts().stream()
+                .filter(b -> b.getItem().getItemId() == ItemPool.SHINY_RING)
+                .count();
+        assertThat(rings, is(3L));
       }
     }
 
     @Test
     public void deductsFoldableItems() {
+      // origami pasties (shirt, +30 meat) and origami riding crop (weapon, +15 init) are foldables
+      // With only one foldable item, maximizer should not recommend both slots
       var cleanups =
           new Cleanups(
               withEquippableItem("origami pasties"),
               withProperty("maximizerFoldables", true),
-              withSkill("Torso Awareness"));
+              withSkill("Torso Awareness"),
+              withStats(100, 100, 100));
       try (cleanups) {
-        assertTrue(maximize("mox"));
-        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.SHIRT, "origami pasties")));
+        maximize("meat, init");
+        var boosts = getBoosts();
+        var recommendedFromGroup =
+            boosts.stream()
+                .filter(
+                    b -> {
+                      var itemName = b.getItem().getName();
+                      return itemName.equals("origami pasties")
+                          || itemName.equals("origami riding crop");
+                    })
+                .count();
+        // Should recommend at most one of these since we only have one foldable
+        assertThat(
+            "Should not recommend both shirt and weapon from same foldable",
+            recommendedFromGroup,
+            lessThanOrEqualTo(1L));
       }
     }
   }
@@ -324,9 +350,12 @@ public class MaximizerSpeculationTest {
     @Test
     public void chefstaffWithoutGloveOrSkillNotRecommended() {
       var cleanups =
-          new Cleanups(withEquippableItem("Staff of Simmering Hatred"), withStats(100, 100, 100));
+          new Cleanups(withEquippableItem("Staff of Simmering Hatred"), withStats(100, 125, 100));
       try (cleanups) {
-        assertTrue(maximize("spell dmg"));
+        maximize("spell dmg");
+        // Chefstaves require Spirit of Rigatoni or hand in glove to equip
+        assertThat(
+            getBoosts(), not(hasItem(recommendsSlot(Slot.WEAPON, "Staff of Simmering Hatred"))));
       }
     }
 
@@ -336,9 +365,10 @@ public class MaximizerSpeculationTest {
           new Cleanups(
               withEquippableItem("Staff of Simmering Hatred"),
               withSkill("Spirit of Rigatoni"),
-              withStats(100, 100, 100));
+              withStats(100, 125, 100));
       try (cleanups) {
-        assertTrue(maximize("spell dmg"));
+        maximize("spell dmg");
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.WEAPON, "Staff of Simmering Hatred")));
       }
     }
   }
@@ -420,9 +450,11 @@ public class MaximizerSpeculationTest {
   class ManaCostHandling {
     @Test
     public void accountsForStackableMana() {
-      var cleanups = new Cleanups(withEquippableItem("wizard hat"), withStats(100, 100, 100));
+      var cleanups =
+          new Cleanups(withEquippableItem("jewel-eyed wizard hat"), withStats(100, 100, 100));
       try (cleanups) {
-        assertTrue(maximize("-mana cost"));
+        maximize("-mana cost");
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.HAT, "jewel-eyed wizard hat")));
       }
     }
   }
@@ -443,9 +475,14 @@ public class MaximizerSpeculationTest {
   class MeatdropHandling {
     @Test
     public void accountsForMeatdrop() {
-      var cleanups = new Cleanups(withEquippableItem("meat detector"), withStats(100, 100, 100));
+      var cleanups =
+          new Cleanups(
+              withEquippableItem("duct tape shirt"),
+              withSkill("Torso Awareness"),
+              withStats(100, 100, 100));
       try (cleanups) {
-        assertTrue(maximize("meat"));
+        maximize("meat");
+        assertThat(getBoosts(), hasItem(recommendsSlot(Slot.SHIRT, "duct tape shirt")));
       }
     }
   }
