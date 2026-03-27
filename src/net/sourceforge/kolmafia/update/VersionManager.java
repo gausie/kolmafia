@@ -30,7 +30,10 @@ public class VersionManager {
   }
 
   public static List<VersionInfo> getStoredVersions() {
-    File dir = getVersionsDirectory();
+    return getStoredVersions(getVersionsDirectory());
+  }
+
+  static List<VersionInfo> getStoredVersions(File dir) {
     if (!dir.exists()) {
       return List.of();
     }
@@ -76,11 +79,7 @@ public class VersionManager {
     return null;
   }
 
-  public static boolean isJarExecution() {
-    return getCurrentJarPath() != null;
-  }
-
-  public static boolean isJpackageInstall() {
+public static boolean isJpackageInstall() {
     return System.getProperty("jpackage.app-version") != null;
   }
 
@@ -257,13 +256,13 @@ public class VersionManager {
     command.add(jarPath.getAbsolutePath());
 
     try {
-      Preferences.setInteger("selectedVersion", revision);
-
       RequestLogger.printLine("Starting KoLmafia r" + revision + "...");
 
       ProcessBuilder pb = new ProcessBuilder(command);
       pb.inheritIO();
       pb.start();
+
+      Preferences.setInteger("selectedVersion", revision);
 
       KoLmafia.quit();
       return true;

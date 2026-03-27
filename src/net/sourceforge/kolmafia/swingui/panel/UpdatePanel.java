@@ -16,6 +16,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
@@ -244,6 +245,15 @@ public class UpdatePanel extends JPanel {
     }
 
     int revision = this.tableModel.getRevisionAt(row);
+    int confirm =
+        JOptionPane.showConfirmDialog(
+            this,
+            "Delete r" + revision + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION);
+    if (confirm != JOptionPane.YES_OPTION) {
+      return;
+    }
     VersionManager.deleteVersion(revision);
     refreshVersionTable();
   }

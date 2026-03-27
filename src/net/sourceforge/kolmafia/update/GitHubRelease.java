@@ -13,9 +13,6 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import net.sourceforge.kolmafia.RequestLogger;
 import net.sourceforge.kolmafia.StaticEntity;
 
@@ -37,6 +34,7 @@ public record GitHubRelease(
           HttpRequest.newBuilder()
               .uri(URI.create(API_BASE + "/latest"))
               .header("Accept", "application/vnd.github+json")
+              .header("User-Agent", "KoLmafia")
               .timeout(TIMEOUT)
               .GET()
               .build();
@@ -53,42 +51,13 @@ public record GitHubRelease(
     }
   }
 
-  public static List<GitHubRelease> fetchRecent(int count) {
-    try {
-      var request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(API_BASE + "?per_page=" + count))
-              .header("Accept", "application/vnd.github+json")
-              .timeout(TIMEOUT)
-              .GET()
-              .build();
-
-      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      if (response.statusCode() != 200) {
-        return Collections.emptyList();
-      }
-
-      JSONArray array = JSON.parseArray(response.body());
-      List<GitHubRelease> releases = new ArrayList<>();
-      for (int i = 0; i < array.size(); i++) {
-        GitHubRelease release = parseRelease(array.getJSONObject(i));
-        if (release != null) {
-          releases.add(release);
-        }
-      }
-      return releases;
-    } catch (Exception e) {
-      StaticEntity.printStackTrace(e, "Error fetching releases");
-      return Collections.emptyList();
-    }
-  }
-
-  public static GitHubRelease fetchByTag(String tag) {
+public static GitHubRelease fetchByTag(String tag) {
     try {
       var request =
           HttpRequest.newBuilder()
               .uri(URI.create(API_BASE + "/tags/" + tag))
               .header("Accept", "application/vnd.github+json")
+              .header("User-Agent", "KoLmafia")
               .timeout(TIMEOUT)
               .GET()
               .build();
@@ -172,7 +141,7 @@ public record GitHubRelease(
     }
   }
 
-  private static GitHubRelease parseRelease(JSONObject obj) {
+  static GitHubRelease parseRelease(JSONObject obj) {
     if (obj == null) {
       return null;
     }

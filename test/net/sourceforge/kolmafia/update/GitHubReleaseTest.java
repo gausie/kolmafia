@@ -6,19 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 
 public class GitHubReleaseTest {
 
-  private static GitHubRelease parseRelease(JSONObject obj) throws Exception {
-    Method method = GitHubRelease.class.getDeclaredMethod("parseRelease", JSONObject.class);
-    method.setAccessible(true);
-    return (GitHubRelease) method.invoke(null, obj);
+  private static GitHubRelease parseRelease(JSONObject obj) {
+    return GitHubRelease.parseRelease(obj);
   }
 
   @Test
-  public void parsesValidRelease() throws Exception {
+  public void parsesValidRelease() {
     String json =
         """
         {
@@ -44,12 +41,12 @@ public class GitHubReleaseTest {
   }
 
   @Test
-  public void returnsNullForNullObject() throws Exception {
+  public void returnsNullForNullObject() {
     assertNull(parseRelease(null));
   }
 
   @Test
-  public void returnsNullForMissingTagName() throws Exception {
+  public void returnsNullForMissingTagName() {
     String json =
         """
         {"html_url": "https://example.com"}
@@ -58,7 +55,7 @@ public class GitHubReleaseTest {
   }
 
   @Test
-  public void returnsNullForNonRevisionTag() throws Exception {
+  public void returnsNullForNonRevisionTag() {
     String json =
         """
         {"tag_name": "v1.0.0"}
@@ -67,7 +64,7 @@ public class GitHubReleaseTest {
   }
 
   @Test
-  public void returnsNullForNonNumericRevision() throws Exception {
+  public void returnsNullForNonNumericRevision() {
     String json =
         """
         {"tag_name": "rabc"}
@@ -76,7 +73,7 @@ public class GitHubReleaseTest {
   }
 
   @Test
-  public void handlesReleaseWithNoAssets() throws Exception {
+  public void handlesReleaseWithNoAssets() {
     String json =
         """
         {
@@ -95,7 +92,7 @@ public class GitHubReleaseTest {
   }
 
   @Test
-  public void picksJarFromMultipleAssets() throws Exception {
+  public void picksJarFromMultipleAssets() {
     String json =
         """
         {

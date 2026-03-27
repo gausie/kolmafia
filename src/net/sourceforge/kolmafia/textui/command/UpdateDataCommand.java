@@ -75,6 +75,15 @@ public class UpdateDataCommand extends AbstractCommand {
     }
   }
 
+  private static int parseRevision(String arg) {
+    String revStr = arg.startsWith("r") ? arg.substring(1) : arg;
+    try {
+      return Integer.parseInt(revStr);
+    } catch (NumberFormatException e) {
+      return -1;
+    }
+  }
+
   private void download(String[] params) {
     if (VersionManager.isJpackageInstall()) {
       RequestLogger.printLine(
@@ -85,11 +94,8 @@ public class UpdateDataCommand extends AbstractCommand {
     GitHubRelease target;
 
     if (params.length >= 2) {
-      String revStr = params[1].startsWith("r") ? params[1].substring(1) : params[1];
-      int revision;
-      try {
-        revision = Integer.parseInt(revStr);
-      } catch (NumberFormatException e) {
+      int revision = parseRevision(params[1]);
+      if (revision < 0) {
         KoLmafia.updateDisplay(MafiaState.ERROR, "Invalid revision number: " + params[1]);
         return;
       }
@@ -149,17 +155,21 @@ public class UpdateDataCommand extends AbstractCommand {
       return;
     }
 
-    String revStr = params[1].startsWith("r") ? params[1].substring(1) : params[1];
-    int revision;
-    try {
-      revision = Integer.parseInt(revStr);
-    } catch (NumberFormatException e) {
+    int revision = parseRevision(params[1]);
+    if (revision < 0) {
       KoLmafia.updateDisplay(MafiaState.ERROR, "Invalid revision number: " + params[1]);
       return;
     }
 
     if (revision == StaticEntity.getRevision()) {
       RequestLogger.printLine("Already running r" + revision + ".");
+      return;
+    }
+
+    if (!VersionManager.hasVersion(revision)) {
+      KoLmafia.updateDisplay(
+          MafiaState.ERROR,
+          "Version r" + revision + " is not downloaded. Use 'update download " + revision + "' first.");
       return;
     }
 
