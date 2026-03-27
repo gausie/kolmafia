@@ -154,6 +154,8 @@ public interface KoLConstants extends UtilityConstants {
   File SVN_LOCATION = new File(KoLConstants.ROOT_LOCATION, KoLConstants.SVN_DIRECTORY);
   File SVN_REPO_FILE = new File(KoLConstants.DATA_LOCATION, "svnrepo.json");
   File GIT_LOCATION = new File(KoLConstants.ROOT_LOCATION, KoLConstants.GIT_DIRECTORY);
+  String VERSIONS_DIRECTORY = "versions/";
+  File VERSIONS_LOCATION = new File(KoLConstants.ROOT_LOCATION, KoLConstants.VERSIONS_DIRECTORY);
 
   // All data files that can be overridden
 

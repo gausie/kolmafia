@@ -32,6 +32,7 @@ import net.sourceforge.kolmafia.swingui.panel.GenericPanel;
 import net.sourceforge.kolmafia.swingui.panel.LabeledPanel;
 import net.sourceforge.kolmafia.swingui.panel.OptionsPanel;
 import net.sourceforge.kolmafia.swingui.panel.PingOptionsPanel;
+import net.sourceforge.kolmafia.swingui.panel.UpdatePanel;
 import net.sourceforge.kolmafia.swingui.widget.AutoHighlightTextField;
 import net.sourceforge.kolmafia.swingui.widget.EditableAutoFilterComboBox;
 import net.sourceforge.kolmafia.swingui.widget.PreferenceCheckBox;
@@ -56,6 +57,7 @@ public class LoginFrame extends GenericFrame {
 
     this.tabs.addTab("Connection", new ConnectionOptionsPanel());
     this.tabs.addTab("Proxy Settings", proxyPanel);
+    this.tabs.addTab("Updates", new UpdatePanel());
 
     this.setCenterComponent(this.tabs);
 

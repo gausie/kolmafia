@@ -188,6 +188,7 @@ public class GlobalMenuBar extends JMenuBar {
     JMenu helperMenu = new JMenu("Help");
     this.add(helperMenu);
 
+    helperMenu.add(new DisplayFrameMenuItem("Check for Updates...", "UpdateFrame"));
     helperMenu.add(new ThreadedMenuItem("Copyright Notice", new LicenseDisplayListener()));
     helperMenu.add(new DebugLogMenuItem());
     helperMenu.add(new DebugLogNoteMenuItem());
