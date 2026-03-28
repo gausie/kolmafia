@@ -169,7 +169,11 @@ public class UpdateDataCommand extends AbstractCommand {
     if (!VersionManager.hasVersion(revision)) {
       KoLmafia.updateDisplay(
           MafiaState.ERROR,
-          "Version r" + revision + " is not downloaded. Use 'update download " + revision + "' first.");
+          "Version r"
+              + revision
+              + " is not downloaded. Use 'update download "
+              + revision
+              + "' first.");
       return;
     }
 

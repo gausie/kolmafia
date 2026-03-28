@@ -51,7 +51,7 @@ public record GitHubRelease(
     }
   }
 
-public static GitHubRelease fetchByTag(String tag) {
+  public static GitHubRelease fetchByTag(String tag) {
     try {
       var request =
           HttpRequest.newBuilder()

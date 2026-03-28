@@ -79,7 +79,7 @@ public class VersionManager {
     return null;
   }
 
-public static boolean isJpackageInstall() {
+  public static boolean isJpackageInstall() {
     return System.getProperty("jpackage.app-version") != null;
   }
 
