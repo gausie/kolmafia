@@ -118,6 +118,8 @@ import net.sourceforge.kolmafia.swingui.listener.LicenseDisplayListener;
 import net.sourceforge.kolmafia.swingui.panel.GearChangePanel;
 import net.sourceforge.kolmafia.swingui.panel.GenericPanel;
 import net.sourceforge.kolmafia.textui.AshRuntime;
+import net.sourceforge.kolmafia.update.GitHubRelease;
+import net.sourceforge.kolmafia.update.VersionManager;
 import net.sourceforge.kolmafia.utilities.LockableListFactory;
 import net.sourceforge.kolmafia.utilities.LogStream;
 import net.sourceforge.kolmafia.utilities.StringUtilities;
@@ -300,6 +302,13 @@ public abstract class KoLmafia {
     // Set a user agent preemptively.  Workaround to allow https support for file_to_map and price
     // updates to coexist.
     GenericRequest.setUserAgent();
+
+    // If the user has selected a different version, restart into it
+    // before doing anything else visible.
+
+    if (VersionManager.bootstrapIfNeeded()) {
+      return;
+    }
 
     // Clear out any outdated data files.
 
@@ -1887,10 +1896,46 @@ public abstract class KoLmafia {
   }
 
   private static class UpdateCheckRunnable implements Runnable {
+    private static final long CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000L; // 4 hours
+
     @Override
     public void run() {
-      // TODO: Check for new version on jenkins\github after migration is complete. See revision
-      // history for old release update check.
+      if (!Preferences.getBoolean("updateCheckEnabled")) {
+        return;
+      }
+
+      int currentRevision = StaticEntity.getRevision();
+      if (currentRevision == 0) {
+        // Dev build, skip update check
+        return;
+      }
+
+      if (System.getProperty("jpackage.app-version") != null) {
+        // jpackage installs should update via their package manager
+        return;
+      }
+
+      long lastCheck = Preferences.getLong("lastUpdateCheck");
+      if (System.currentTimeMillis() - lastCheck < CHECK_INTERVAL_MS) {
+        return;
+      }
+
+      GitHubRelease latest = GitHubRelease.fetchLatest();
+      if (latest == null) {
+        return;
+      }
+
+      Preferences.setLong("lastUpdateCheck", System.currentTimeMillis());
+      Preferences.setInteger("lastUpdateRevision", latest.revision());
+
+      if (latest.revision() > currentRevision) {
+        KoLmafia.updateDisplay(
+            "KoLmafia r"
+                + latest.revision()
+                + " is available (you have r"
+                + currentRevision
+                + "). Use 'update' command to manage versions.");
+      }
     }
   }
 

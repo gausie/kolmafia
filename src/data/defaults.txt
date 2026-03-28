@@ -80,6 +80,8 @@ global	lastBuffRequestType	0
 global	lastGlobalCounterDay	-1
 global	lastImageCacheClear	0
 global	lastRelayUpdate
+global	lastUpdateCheck	0
+global	lastUpdateRevision	0
 global	lastUserAgent
 global	lastUsername
 global	logAcquiredItems	true
@@ -105,6 +107,7 @@ global	logStatusEffects	true
 global	logStatusOnLogin	false
 global	macroDebug	false
 global	macroLens	false
+global	maxStoredVersions	5
 global	mementoListActive	false
 global	mergeHobopolisChat	false
 global	pingDefaultTestPage	api
@@ -162,6 +165,7 @@ global	saveState
 global	saveStateActive
 global	scriptButtonPosition	0
 global	scriptList	restore hp | restore mp
+global	selectedVersion	0
 global	sharePriceData	true
 global	showAllRequests	false
 global	showExceptionalRequests	false
@@ -177,6 +181,7 @@ global	swingLookAndFeel
 global	switchEquipmentForBuffs	false
 global	syncAfterSvnUpdate	false
 global	toolbarPosition	1
+global	updateCheckEnabled	true
 global	useChatToolbar	true
 global	useContactsFrame	true
 global	useDevServer	false
