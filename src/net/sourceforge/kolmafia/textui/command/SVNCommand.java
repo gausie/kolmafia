@@ -1,5 +1,7 @@
 package net.sourceforge.kolmafia.textui.command;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import net.sourceforge.kolmafia.KoLConstants;
@@ -7,8 +9,6 @@ import net.sourceforge.kolmafia.KoLConstants.MafiaState;
 import net.sourceforge.kolmafia.KoLmafia;
 import net.sourceforge.kolmafia.RequestLogger;
 import net.sourceforge.kolmafia.scripts.svn.SVNManager;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
 
 public class SVNCommand extends AbstractCommand {
   public SVNCommand() {
@@ -37,10 +37,10 @@ public class SVNCommand extends AbstractCommand {
         return;
       }
 
-      SVNURL repo;
+      URI repo;
       try {
-        repo = SVNURL.parseURIEncoded(params);
-      } catch (SVNException e1) {
+        repo = new URI(params);
+      } catch (URISyntaxException e1) {
         KoLmafia.updateDisplay(MafiaState.ERROR, "Invalid SVN URL");
         return;
       }
@@ -50,10 +50,10 @@ public class SVNCommand extends AbstractCommand {
 
       // user might have supplied a URL
       if (params.startsWith("svn:") || params.startsWith("http")) {
-        SVNURL repo;
+        URI repo;
         try {
-          repo = SVNURL.parseURIEncoded(params);
-        } catch (SVNException e1) {
+          repo = new URI(params);
+        } catch (URISyntaxException e1) {
           KoLmafia.updateDisplay(MafiaState.ERROR, "Invalid SVN URL");
           return;
         }

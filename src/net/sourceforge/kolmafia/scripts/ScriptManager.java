@@ -1,6 +1,8 @@
 package net.sourceforge.kolmafia.scripts;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,8 +17,6 @@ import net.sourceforge.kolmafia.RequestLogger;
 import net.sourceforge.kolmafia.scripts.git.GitManager;
 import net.sourceforge.kolmafia.scripts.svn.SVNManager;
 import net.sourceforge.kolmafia.utilities.StringUtilities;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
 
 public class ScriptManager {
 
@@ -139,10 +139,10 @@ public class ScriptManager {
   }
 
   private static void installSvnDependency(String url) {
-    SVNURL repo;
+    URI repo;
     try {
-      repo = SVNURL.parseURIEncoded(url);
-    } catch (SVNException e) {
+      repo = new URI(url);
+    } catch (URISyntaxException e) {
       RequestLogger.printLine("Cannot parse \"" + url + "\" as SVN URL");
       return;
     }

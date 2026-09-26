@@ -26,7 +26,6 @@ import java.util.IllegalFormatException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -190,6 +189,7 @@ import net.sourceforge.kolmafia.request.coinmaster.CoinMasterRequest;
 import net.sourceforge.kolmafia.request.concoction.CreateItemRequest;
 import net.sourceforge.kolmafia.scripts.git.GitManager;
 import net.sourceforge.kolmafia.scripts.svn.SVNManager;
+import net.sourceforge.kolmafia.scripts.svn.dav.SubversionException;
 import net.sourceforge.kolmafia.session.AutumnatonManager;
 import net.sourceforge.kolmafia.session.BanishManager;
 import net.sourceforge.kolmafia.session.BeretManager;
@@ -260,9 +260,6 @@ import org.htmlcleaner.HtmlCleaner;
 import org.htmlcleaner.SimpleXmlSerializer;
 import org.htmlcleaner.TagNode;
 import org.htmlcleaner.XPatherException;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.wc.SVNInfo;
-import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 @SuppressWarnings({"incomplete-switch", "unused"})
 public abstract class RuntimeLibrary {
@@ -10769,40 +10766,31 @@ public abstract class RuntimeLibrary {
       return getRecInit(interpreter);
     }
     File projectFile = new File(KoLConstants.SVN_LOCATION, matches.get(0));
-    try {
-      if (!SVNWCUtil.isWorkingCopyRoot(projectFile)) {
-        return getRecInit(interpreter);
-      }
-    } catch (SVNException e1) {
+    if (!SVNManager.isWorkingCopy(projectFile)) {
       return getRecInit(interpreter);
     }
+
     RecordType type = RuntimeLibrary.svnInfoRec;
     RecordValue rec = new RecordValue(type);
 
-    // get info
-
-    SVNInfo info;
+    SVNManager.Info info;
     try {
       info = SVNManager.doInfo(projectFile);
-    } catch (SVNException e) {
+    } catch (SubversionException e) {
       SVNManager.error(e, null);
       return getRecInit(interpreter);
     }
 
     // URL
-    rec.aset(0, new Value(info.getURL().toString()), interpreter);
+    rec.aset(0, new Value(info.url()), interpreter);
     // revision
-    rec.aset(1, DataTypes.makeIntValue(info.getRevision().getNumber()), interpreter);
+    rec.aset(1, DataTypes.makeIntValue(info.revision()), interpreter);
     // lastChangedAuthor
-    rec.aset(2, new Value(info.getAuthor()), interpreter);
+    rec.aset(2, new Value(info.lastChangedAuthor()), interpreter);
     // lastChangedRev
-    rec.aset(3, DataTypes.makeIntValue(info.getCommittedRevision().getNumber()), interpreter);
+    rec.aset(3, DataTypes.makeIntValue(info.lastChangedRev()), interpreter);
     // lastChangedDate
-    // use format that is similar to what 'svn info' gives, ex:
-    // Last Changed Date: 2003-01-16 23:21:19 -0600 (Thu, 16 Jan 2003)
-    SimpleDateFormat SVN_FORMAT =
-        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z (EEE, dd MMM yyyy)", Locale.US);
-    rec.aset(4, new Value(SVN_FORMAT.format(info.getCommittedDate())), interpreter);
+    rec.aset(4, new Value(info.lastChangedDate()), interpreter);
 
     return rec;
   }
@@ -11411,13 +11399,7 @@ public abstract class RuntimeLibrary {
   public static Value svn_exists(ScriptRuntime controller, final Value project) {
     File f = new File(KoLConstants.SVN_LOCATION, project.toString());
 
-    boolean isWCRoot = false;
-    try {
-      isWCRoot = SVNWCUtil.isWorkingCopyRoot(f);
-    } catch (SVNException e) {
-      StaticEntity.printStackTrace(e);
-    }
-    return DataTypes.makeBooleanValue(isWCRoot);
+    return DataTypes.makeBooleanValue(SVNManager.isWorkingCopy(f));
   }
 
   public static Value git_exists(ScriptRuntime controller, final Value project) {

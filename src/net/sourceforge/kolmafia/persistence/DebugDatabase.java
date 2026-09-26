@@ -73,6 +73,7 @@ import net.sourceforge.kolmafia.request.StorageRequest;
 import net.sourceforge.kolmafia.request.StorageRequest.StorageRequestType;
 import net.sourceforge.kolmafia.request.ZapRequest;
 import net.sourceforge.kolmafia.scripts.svn.SVNManager;
+import net.sourceforge.kolmafia.scripts.svn.dav.SubversionException;
 import net.sourceforge.kolmafia.session.DisplayCaseManager;
 import net.sourceforge.kolmafia.session.EquipmentManager;
 import net.sourceforge.kolmafia.session.InventoryManager;
@@ -84,8 +85,6 @@ import net.sourceforge.kolmafia.utilities.LogStream;
 import net.sourceforge.kolmafia.utilities.StringUtilities;
 import net.sourceforge.kolmafia.utilities.WikiUtilities;
 import net.sourceforge.kolmafia.utilities.WikiUtilities.WikiType;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -4273,7 +4272,7 @@ public class DebugDatabase {
         if (f.getName().startsWith(".")) continue;
         if (f.isDirectory()) {
           try {
-            SVNURL repo = SVNManager.workingCopyToSVNURL(f);
+            URI repo = SVNManager.workingCopyToSVNURL(f);
             if (repo == null) {
               RequestLogger.printLine(
                   f.getName() + " does not seem to have a valid remote repository.");
@@ -4284,7 +4283,7 @@ public class DebugDatabase {
                     "Local installation of " + f.getName() + " uses SVN to update from GitHub.");
               }
             }
-          } catch (SVNException e) {
+          } catch (SubversionException e) {
             StaticEntity.printStackTrace(e);
           }
         }

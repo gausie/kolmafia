@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<S:log-report xmlns:S="svn:" xmlns:D="DAV:">
+<S:log-item>
+<D:version-name>30</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>fixes to Task List default tasks:
+
+* fixed a typo that said "skeleton key" instead of "skeleton bone" in the Get Skeleton Key quest
+* changed "Crimbo ukelele" to "Crimbo ukulele" due to KoL change</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>31</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>* Fixed rain-doh support
+* Added Smithsness modifier
+* Negative elemental resistance is combined</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>32</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>* Improved CSS for IE10.</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>33</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>* auto_mushroom now tells you upcoming events if you run it a second time.</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>34</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>* fixed auto_mushroom bug when resetting sequence</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>35</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>Guild trainer should show skills with an adventure cost now.</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>36</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>* Fixed an effect regex.</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>37</D:version-name>
+<D:creator-displayname>rlbond86</D:creator-displayname>
+<D:comment>* Disabled debug mode</D:comment>
+</S:log-item>
+<S:log-item>
+<D:version-name>38</D:version-name>
+<D:creator-displayname>veracity0</D:creator-displayname>
+<D:comment>string_to_int() has been removed, so use simply to_int()
+</D:comment>
+</S:log-item>
+</S:log-report>

@@ -65,6 +65,7 @@ public class FakeHttpClient extends HttpClient {
   public void clear() {
     this.requests.clear();
     this.responses.clear();
+    this.responseFunc = null;
   }
 
   @Override

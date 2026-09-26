@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:ns0="DAV:">
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/" xmlns:g0="DAV:">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>57</lp1:version-name>
+<lp1:resourcetype><D:collection/></lp1:resourcetype>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+<D:propstat>
+<D:prop>
+<g0:getcontentlength/>
+</D:prop>
+<D:status>HTTP/1.1 404 Not Found</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/EoDSCDay1.ash</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>56</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>1840</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/EoDSCDay2.ash</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>56</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>2960</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/EoDSCDay3.ash</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>56</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>3767</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/EoDSCDay4.ash</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>56</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>3818</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/" xmlns:g0="DAV:">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/Passive%20Scripts/</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>57</lp1:version-name>
+<lp1:resourcetype><D:collection/></lp1:resourcetype>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+<D:propstat>
+<D:prop>
+<g0:getcontentlength/>
+</D:prop>
+<D:status>HTTP/1.1 404 Not Found</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension/EoDSCJustQuests.ash</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>57</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>5432</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+</D:multistatus>

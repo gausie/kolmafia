@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONException;
 import com.alibaba.fastjson2.JSONObject;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,10 +19,9 @@ import net.sourceforge.kolmafia.StaticEntity;
 import net.sourceforge.kolmafia.preferences.Preferences;
 import net.sourceforge.kolmafia.scripts.git.GitManager;
 import net.sourceforge.kolmafia.scripts.svn.SVNManager;
+import net.sourceforge.kolmafia.scripts.svn.dav.SubversionException;
 import net.sourceforge.kolmafia.utilities.ByteBufferUtilities;
 import net.sourceforge.kolmafia.utilities.FileUtilities;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
 
 public class ScriptManager {
   private ScriptManager() {}
@@ -97,10 +97,10 @@ public class ScriptManager {
           .filter(p -> !knownScripts.contains(p))
           .forEach(
               p -> {
-                SVNURL repo;
+                URI repo;
                 try {
                   repo = SVNManager.workingCopyToSVNURL(p.toFile());
-                } catch (SVNException e) {
+                } catch (SubversionException e) {
                   // not an SVN repo, continue
                   return;
                 }

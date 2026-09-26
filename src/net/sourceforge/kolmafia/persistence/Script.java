@@ -8,8 +8,7 @@ import net.sourceforge.kolmafia.KoLConstants;
 import net.sourceforge.kolmafia.StaticEntity;
 import net.sourceforge.kolmafia.scripts.git.GitManager;
 import net.sourceforge.kolmafia.scripts.svn.SVNManager;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
+import net.sourceforge.kolmafia.scripts.svn.dav.SubversionException;
 
 public class Script implements Comparable<Script> {
   public enum Type {
@@ -120,7 +119,7 @@ public class Script implements Comparable<Script> {
       String id;
       try {
         id = SVNManager.getRepoId(this.repo);
-      } catch (SVNException e) {
+      } catch (SubversionException e) {
         // nothing we can do
         return;
       }
@@ -128,7 +127,7 @@ public class Script implements Comparable<Script> {
       if (Files.isDirectory(potentialPath)) {
         try {
           SVNManager.workingCopyToSVNURL(potentialPath.toFile());
-        } catch (SVNException e) {
+        } catch (SubversionException e) {
           // not an SVN repo
           return;
         }
@@ -143,9 +142,9 @@ public class Script implements Comparable<Script> {
     } else {
       String installMe = getRepo();
       try {
-        SVNManager.doCheckout(SVNURL.parseURIEncoded(installMe));
+        SVNManager.doCheckout(new java.net.URI(installMe));
         return true;
-      } catch (SVNException e) {
+      } catch (java.net.URISyntaxException e) {
         StaticEntity.printStackTrace(e);
         return false;
       }
@@ -158,9 +157,9 @@ public class Script implements Comparable<Script> {
       return GitManager.update(folder);
     } else {
       try {
-        SVNManager.doUpdate(SVNURL.parseURIEncoded(getRepo()));
+        SVNManager.doUpdate(new java.net.URI(getRepo()));
         return true;
-      } catch (SVNException e) {
+      } catch (java.net.URISyntaxException e) {
         StaticEntity.printStackTrace(e);
         return false;
       }

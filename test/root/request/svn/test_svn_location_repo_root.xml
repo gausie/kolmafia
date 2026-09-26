@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:ns1="http://subversion.tigris.org/xmlns/dav/" xmlns:ns0="DAV:">
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/eodscascension/code-0/</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>58</lp1:version-name>
+<lp3:baseline-relative-path/>
+<lp3:repository-uuid>a91e79b4-adcd-4b3e-b9d8-623eaf7dab41</lp3:repository-uuid>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+</D:multistatus>

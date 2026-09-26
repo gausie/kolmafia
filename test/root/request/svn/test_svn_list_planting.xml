@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:ns0="DAV:">
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/" xmlns:g0="DAV:">
+<D:href>/p/rlbond86-mafia-scripts/code/!svn/bc/38/auto_mushroom/trunk/planting/</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>38</lp1:version-name>
+<lp1:resourcetype><D:collection/></lp1:resourcetype>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+<D:propstat>
+<D:prop>
+<g0:getcontentlength/>
+</D:prop>
+<D:status>HTTP/1.1 404 Not Found</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/rlbond86-mafia-scripts/code/!svn/bc/38/auto_mushroom/trunk/planting/auto_mushroom.ash</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>38</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>28060</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/rlbond86-mafia-scripts/code/!svn/bc/38/auto_mushroom/trunk/planting/auto_mushroom.html</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>1</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>31107</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+<D:response xmlns:lp1="DAV:" xmlns:lp3="http://subversion.tigris.org/xmlns/dav/">
+<D:href>/p/rlbond86-mafia-scripts/code/!svn/bc/38/auto_mushroom/trunk/planting/auto_mushroom.txt</D:href>
+<D:propstat>
+<D:prop>
+<lp1:version-name>1</lp1:version-name>
+<lp1:resourcetype/>
+<lp1:getcontentlength>1576</lp1:getcontentlength>
+</D:prop>
+<D:status>HTTP/1.1 200 OK</D:status>
+</D:propstat>
+</D:response>
+</D:multistatus>

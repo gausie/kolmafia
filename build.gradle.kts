@@ -83,11 +83,6 @@ dependencies {
   implementation("com.formdev:flatlaf:3.7.1")
   implementation("com.formdev:flatlaf-intellij-themes:3.7.1")
   implementation("com.formdev:flatlaf-swingx:3.7.1")
-  // Optional runtime deps for svnkit
-  runtimeOnly("com.trilead:trilead-ssh2:1.0.0-build222")
-  runtimeOnly("net.java.dev.jna:jna:5.18.1")
-  runtimeOnly("net.java.dev.jna:jna-platform:5.18.1")
-
   "libImplementation"("org.swinglabs:swingx:1.0")
 
   implementation(
@@ -106,7 +101,6 @@ dependencies {
   implementation("com.alibaba.fastjson2:fastjson2:2.0.59")
   implementation("org.mozilla:rhino:1.9.1")
   implementation("org.swinglabs:swingx:1.0")
-  implementation("org.tmatesoft.svnkit:svnkit:1.10.11")
   implementation("com.jgoodies:jgoodies-binding:2.13.0")
   implementation("org.eclipse.jgit:org.eclipse.jgit:7.4.0.202509020913-r")
   implementation("org.eclipse.jgit:org.eclipse.jgit.ssh.apache:7.4.0.202509020913-r")
