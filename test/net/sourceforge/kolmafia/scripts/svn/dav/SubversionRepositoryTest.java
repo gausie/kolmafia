@@ -36,12 +36,14 @@ public class SubversionRepositoryTest {
   private void useOwnClient() {
     previous = HttpUtilities::getClientBuilder;
     HttpUtilities.setClientBuilder(() -> builder);
+    SubversionRepository.resetClient();
   }
 
   @AfterEach
   public void restoreClient() {
     builder.client.clear();
     if (previous != null) HttpUtilities.setClientBuilder(previous);
+    SubversionRepository.resetClient();
   }
 
   private List<HttpRequest> requests() {
@@ -142,7 +144,6 @@ public class SubversionRepositoryTest {
 
       assertThat(file.kind(), is(Kind.FILE));
       assertThat(file.revision(), is(1L));
-      assertThat(file.size(), is(35L));
       assertThat(directory.kind(), is(Kind.DIRECTORY));
       assertThat(directory.isDirectory(), is(true));
     }

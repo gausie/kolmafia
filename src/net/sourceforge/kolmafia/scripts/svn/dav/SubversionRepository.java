@@ -1,8 +1,6 @@
 package net.sourceforge.kolmafia.scripts.svn.dav;
 
-import static net.sourceforge.kolmafia.scripts.svn.dav.DavXml.DAV_NS;
-import static net.sourceforge.kolmafia.scripts.svn.dav.DavXml.SVN_DAV_NS;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -15,7 +13,15 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import net.sourceforge.kolmafia.request.GenericRequest;
 import net.sourceforge.kolmafia.utilities.HttpUtilities;
+import net.sourceforge.kolmafia.utilities.ResettingHttpClient;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public class SubversionRepository {
   public enum Kind {
@@ -23,7 +29,7 @@ public class SubversionRepository {
     DIRECTORY
   }
 
-  public record Entry(String path, Kind kind, long revision, long size) {
+  public record Entry(String path, Kind kind, long revision) {
     public String name() {
       int slash = path.lastIndexOf('/');
       return slash == -1 ? path : path.substring(slash + 1);
@@ -40,7 +46,7 @@ public class SubversionRepository {
       """
       <?xml version="1.0" encoding="utf-8"?>
       <D:propfind xmlns:D="DAV:">
-      <D:prop><D:version-name/><D:resourcetype/><D:getcontentlength/></D:prop>
+      <D:prop><D:version-name/><D:resourcetype/></D:prop>
       </D:propfind>\
       """;
 
@@ -51,6 +57,19 @@ public class SubversionRepository {
       <D:prop><D:version-name/><S:baseline-relative-path/><S:repository-uuid/></D:prop>
       </D:propfind>\
       """;
+
+  private static ResettingHttpClient client;
+
+  private static synchronized ResettingHttpClient getClient() {
+    if (client == null) {
+      client = new ResettingHttpClient(() -> HttpUtilities.getClientBuilder().build());
+    }
+    return client;
+  }
+
+  public static synchronized void resetClient() {
+    client = null;
+  }
 
   private final URI location;
   private final String repositoryPath;
@@ -74,27 +93,31 @@ public class SubversionRepository {
           "Only http and https Subversion URLs are supported: " + location);
     }
 
-    var document = DavXml.parse(request(location, "PROPFIND", PROPFIND_LOCATION, "0"));
-    var responses = DavXml.descendants(document, DAV_NS, "response");
+    var document = parse(request(location, "PROPFIND", PROPFIND_LOCATION, "0"));
+    var responses = descendants(document, DAV_NS, "response");
     if (responses.isEmpty()) {
       throw new SubversionException("No such Subversion path: " + location);
     }
 
-    var prop = DavXml.successfulProp(responses.getFirst());
+    var prop = successfulProp(responses.getFirst());
     if (prop == null) {
       throw new SubversionException("No such Subversion path: " + location);
     }
 
-    var href = DavXml.text(responses.getFirst(), DAV_NS, "href");
-    var relative = DavXml.text(prop, SVN_DAV_NS, "baseline-relative-path");
-    var uuid = DavXml.text(prop, SVN_DAV_NS, "repository-uuid");
-    var versionName = DavXml.text(prop, DAV_NS, "version-name");
+    var href = text(responses.getFirst(), DAV_NS, "href");
+    var relative = text(prop, SVN_DAV_NS, "baseline-relative-path");
+    var uuid = text(prop, SVN_DAV_NS, "repository-uuid");
+    var versionName = text(prop, DAV_NS, "version-name");
     if (href == null || relative == null || versionName == null) {
       throw new SubversionException("Server at " + location + " is not a Subversion repository");
     }
 
     return new SubversionRepository(
-        location, repositoryPath(href, relative), trimSlashes(relative), uuid, parse(versionName));
+        location,
+        repositoryPath(href, relative),
+        trimSlashes(relative),
+        uuid,
+        parseRevision(versionName));
   }
 
   public URI getLocation() {
@@ -109,41 +132,34 @@ public class SubversionRepository {
     return revision;
   }
 
-  public long getLatestRevision() throws SubversionException {
-    return at(location).getRevision();
-  }
-
   public List<Entry> list(String path, long revision) throws SubversionException {
     var target = pinned(path, revision);
-    var document = DavXml.parse(request(target, "PROPFIND", PROPFIND_ENTRIES, "1"));
+    var document = parse(request(target, "PROPFIND", PROPFIND_ENTRIES, "1"));
 
     var entries = new ArrayList<Entry>();
     var base = trimSlashes(target.getRawPath());
-    for (var response : DavXml.descendants(document, DAV_NS, "response")) {
-      var href = DavXml.text(response, DAV_NS, "href");
-      var prop = DavXml.successfulProp(response);
+    for (var response : descendants(document, DAV_NS, "response")) {
+      var href = text(response, DAV_NS, "href");
+      var prop = successfulProp(response);
       if (href == null || prop == null) continue;
 
       var trimmed = trimSlashes(href);
       if (trimmed.equals(base)) continue;
       if (!trimmed.startsWith(base + "/")) continue;
 
-      var versionName = DavXml.text(prop, DAV_NS, "version-name");
+      var versionName = text(prop, DAV_NS, "version-name");
       if (versionName == null) continue;
 
-      var collection = DavXml.child(prop, DAV_NS, "resourcetype");
+      var collection = child(prop, DAV_NS, "resourcetype");
       var kind =
-          collection != null && DavXml.child(collection, DAV_NS, "collection") != null
+          collection != null && child(collection, DAV_NS, "collection") != null
               ? Kind.DIRECTORY
               : Kind.FILE;
-      var length = DavXml.text(prop, DAV_NS, "getcontentlength");
-
       entries.add(
           new Entry(
               join(path, decode(trimSlashes(trimmed.substring(base.length())))),
               kind,
-              parse(versionName),
-              length == null || length.isEmpty() ? 0 : parse(length)));
+              parseRevision(versionName)));
     }
     return entries;
   }
@@ -197,18 +213,18 @@ public class SubversionRepository {
         """
             .formatted(from, to);
 
-    var document = DavXml.parse(request(pinned("", to), "REPORT", body, null));
+    var document = parse(request(pinned("", to), "REPORT", body, null));
 
     var entries = new ArrayList<LogEntry>();
-    for (var item : DavXml.descendants(document, "svn:", "log-item")) {
-      var versionName = DavXml.text(item, DAV_NS, "version-name");
+    for (var item : descendants(document, "svn:", "log-item")) {
+      var versionName = text(item, DAV_NS, "version-name");
       if (versionName == null) continue;
       entries.add(
           new LogEntry(
-              parse(versionName),
-              DavXml.text(item, DAV_NS, "creator-displayname"),
-              DavXml.text(item, "svn:", "date"),
-              DavXml.text(item, DAV_NS, "comment")));
+              parseRevision(versionName),
+              text(item, DAV_NS, "creator-displayname"),
+              text(item, "svn:", "date"),
+              text(item, DAV_NS, "comment")));
     }
     return entries;
   }
@@ -258,7 +274,7 @@ public class SubversionRepository {
     return URLDecoder.decode(path, StandardCharsets.UTF_8);
   }
 
-  private static long parse(String value) throws SubversionException {
+  private static long parseRevision(String value) throws SubversionException {
     try {
       return Long.parseLong(value.trim());
     } catch (NumberFormatException e) {
@@ -296,6 +312,69 @@ public class SubversionRepository {
       builder.header("Content-Type", "text/xml; charset=utf-8");
       builder.method(method, BodyPublishers.ofString(body, StandardCharsets.UTF_8));
     }
-    return HttpUtilities.getClientBuilder().build().send(builder.build(), handler);
+    builder.header("User-Agent", GenericRequest.getUserAgent());
+    return getClient().send(builder.build(), handler);
+  }
+
+  static final String DAV_NS = "DAV:";
+  private static final String SVN_DAV_NS = "http://subversion.tigris.org/xmlns/dav/";
+
+  static Document parse(String body) throws SubversionException {
+    try {
+      var factory = DocumentBuilderFactory.newInstance();
+      factory.setNamespaceAware(true);
+      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      factory.setXIncludeAware(false);
+      factory.setExpandEntityReferences(false);
+      var builder = factory.newDocumentBuilder();
+      return builder.parse(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+    } catch (ParserConfigurationException e) {
+      throw new SubversionException("Could not configure XML parser", e);
+    } catch (Exception e) {
+      throw new SubversionException("Malformed response from Subversion server", e);
+    }
+  }
+
+  private static List<Element> children(Element parent, String namespace, String localName) {
+    var found = new ArrayList<Element>();
+    var nodes = parent.getChildNodes();
+    for (int i = 0; i < nodes.getLength(); i++) {
+      var node = nodes.item(i);
+      if (node.getNodeType() != Node.ELEMENT_NODE) continue;
+      var element = (Element) node;
+      if (!localName.equals(element.getLocalName())) continue;
+      if (!namespace.equals(element.getNamespaceURI())) continue;
+      found.add(element);
+    }
+    return found;
+  }
+
+  private static Element child(Element parent, String namespace, String localName) {
+    var found = children(parent, namespace, localName);
+    return found.isEmpty() ? null : found.getFirst();
+  }
+
+  private static List<Element> descendants(Document document, String namespace, String localName) {
+    var found = new ArrayList<Element>();
+    var nodes = document.getElementsByTagNameNS(namespace, localName);
+    for (int i = 0; i < nodes.getLength(); i++) {
+      found.add((Element) nodes.item(i));
+    }
+    return found;
+  }
+
+  private static String text(Element parent, String namespace, String localName) {
+    var element = child(parent, namespace, localName);
+    return element == null ? null : element.getTextContent();
+  }
+
+  private static Element successfulProp(Element response) {
+    for (var propstat : children(response, DAV_NS, "propstat")) {
+      var status = text(propstat, DAV_NS, "status");
+      if (status == null || !status.contains(" 200 ")) continue;
+      return child(propstat, DAV_NS, "prop");
+    }
+    return null;
   }
 }

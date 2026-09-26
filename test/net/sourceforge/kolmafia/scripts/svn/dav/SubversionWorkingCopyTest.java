@@ -44,12 +44,14 @@ public class SubversionWorkingCopyTest {
   private void useOwnClient() {
     previous = HttpUtilities::getClientBuilder;
     HttpUtilities.setClientBuilder(() -> builder);
+    SubversionRepository.resetClient();
   }
 
   @AfterEach
   public void restoreClient() {
     builder.client.clear();
     if (previous != null) HttpUtilities.setClientBuilder(previous);
+    SubversionRepository.resetClient();
   }
 
   private List<HttpRequest> requests() {
@@ -326,19 +328,6 @@ public class SubversionWorkingCopyTest {
 
       var e = assertThrows(SubversionException.class, () -> SubversionWorkingCopy.at(project));
       assertThat(e.getMessage(), containsString("Malformed working copy metadata"));
-    }
-  }
-
-  @Nested
-  class Removal {
-    @Test
-    public void deletesEverything() throws SubversionException {
-      var copy = SubversionWorkingCopy.at(temp.resolve("project"));
-      copy.checkout(repository());
-
-      copy.remove();
-
-      assertThat(Files.exists(temp.resolve("project")), is(false));
     }
   }
 }

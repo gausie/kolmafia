@@ -2,6 +2,8 @@ package net.sourceforge.kolmafia.persistence;
 
 import com.alibaba.fastjson2.JSONObject;
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.sourceforge.kolmafia.KoLConstants;
@@ -142,9 +144,9 @@ public class Script implements Comparable<Script> {
     } else {
       String installMe = getRepo();
       try {
-        SVNManager.doCheckout(new java.net.URI(installMe));
+        SVNManager.doCheckout(new URI(installMe));
         return true;
-      } catch (java.net.URISyntaxException e) {
+      } catch (URISyntaxException e) {
         StaticEntity.printStackTrace(e);
         return false;
       }
@@ -157,9 +159,9 @@ public class Script implements Comparable<Script> {
       return GitManager.update(folder);
     } else {
       try {
-        SVNManager.doUpdate(new java.net.URI(getRepo()));
+        SVNManager.doUpdate(new URI(getRepo()));
         return true;
-      } catch (java.net.URISyntaxException e) {
+      } catch (URISyntaxException e) {
         StaticEntity.printStackTrace(e);
         return false;
       }

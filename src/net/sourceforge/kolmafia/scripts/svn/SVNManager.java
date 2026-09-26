@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.JOptionPane;
@@ -36,19 +36,33 @@ public class SVNManager extends ScriptManager {
   private record PendingChange(File project, String relpath, ChangeType type) {}
 
   private static final List<PendingChange> pendingChanges = new ArrayList<>();
-  private static final TreeMap<File, long[]> updateMessages = new TreeMap<>();
+
+  private record RevisionRange(long from, long to) {}
+
+  private static final TreeMap<File, RevisionRange> updateMessages = new TreeMap<>();
+  private static final TreeMap<File, SubversionRepository> updateRepositories = new TreeMap<>();
 
   private SVNManager() {}
-
-  public static synchronized void setupLibrary() {}
 
   private static void initialize() {
     pendingChanges.clear();
     updateMessages.clear();
+    updateRepositories.clear();
   }
 
   private static SubversionRepository repository(URI url) throws SubversionException {
     return SubversionRepository.at(url);
+  }
+
+  private static List<File> installedProjects() {
+    var projects = KoLConstants.SVN_LOCATION.listFiles();
+    if (projects == null) return List.of();
+
+    return Arrays.stream(projects)
+        .filter(File::isDirectory)
+        .filter(project -> !project.getName().startsWith("."))
+        .sorted()
+        .toList();
   }
 
   private static SubversionWorkingCopy workingCopy(File project) throws SubversionException {
@@ -98,35 +112,33 @@ public class SVNManager extends ScriptManager {
   }
 
   public static void doUpdate() {
-    final File[] projects = KoLConstants.SVN_LOCATION.listFiles();
+    var projects = installedProjects();
 
-    if (projects == null || projects.length == 0) {
+    if (projects.isEmpty()) {
       RequestLogger.printLine("No projects currently installed with SVN.");
       return;
     }
 
     initialize();
 
-    Runnable runMe =
-        () -> {
-          KoLmafia.updateDisplay("Checking all SVN projects...");
-
-          var behind = checkAllProjects(projects);
-
-          KoLmafia.updateDisplay("Updating all SVN projects...");
-          for (var project : behind) {
-            if (!KoLmafia.permitsContinue()) {
-              return;
-            }
-
-            updateProject(project);
-            pushUpdates();
-          }
-        };
-
     if (SVN_LOCK.tryLock()) {
       try {
-        RequestThread.postRequest(runMe);
+        RequestThread.postRequest(
+            () -> {
+              KoLmafia.updateDisplay("Checking all SVN projects...");
+
+              var behind = checkAllProjects(projects);
+
+              KoLmafia.updateDisplay("Updating all SVN projects...");
+              for (var project : behind) {
+                if (!KoLmafia.permitsContinue()) {
+                  return;
+                }
+
+                updateProject(project);
+                pushUpdates();
+              }
+            });
 
         showCommitMessages();
 
@@ -146,32 +158,18 @@ public class SVNManager extends ScriptManager {
     if (Preferences.getBoolean("svnInstallDependencies")) checkDependencies();
   }
 
-  private static List<File> checkAllProjects(File[] projects) {
-    var candidates = new ArrayList<File>();
-    for (var project : projects) {
-      if (!KoLmafia.permitsContinue()) {
-        return List.of();
-      }
-      if (project.getName().startsWith(".")) {
-        continue;
-      }
-      candidates.add(project);
-    }
-
-    if (candidates.isEmpty()) {
+  private static List<Project> checkAllProjects(List<File> projects) {
+    if (projects.isEmpty() || !KoLmafia.permitsContinue()) {
       return List.of();
     }
 
     var poolSize = Math.max(1, Preferences.getInteger("svnThreadPoolSize"));
-    var executor = Executors.newFixedThreadPool(poolSize);
-    var behind = new ArrayList<File>();
+    var behind = new ArrayList<Project>();
 
-    try {
+    try (var executor = Executors.newFixedThreadPool(poolSize)) {
       var futures =
           executor.invokeAll(
-              candidates.stream()
-                  .map(project -> (java.util.concurrent.Callable<File>) () -> checkProject(project))
-                  .toList());
+              projects.stream().map(p -> (Callable<Project>) () -> checkProject(p)).toList());
       for (var future : futures) {
         var project = future.get();
         if (project != null) behind.add(project);
@@ -180,48 +178,53 @@ public class SVNManager extends ScriptManager {
       Thread.currentThread().interrupt();
     } catch (ExecutionException e) {
       RequestLogger.printLine("Error while checking projects: " + e.getCause());
-    } finally {
-      executor.shutdown();
-      try {
-        if (!executor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-          executor.shutdownNow();
-        }
-      } catch (InterruptedException e) {
-        executor.shutdownNow();
-        Thread.currentThread().interrupt();
-      }
     }
 
-    behind.sort(File::compareTo);
+    behind.sort((left, right) -> left.directory().compareTo(right.directory()));
     return behind;
   }
 
-  private static File checkProject(File project) {
+  private record Project(
+      File directory, SubversionWorkingCopy copy, SubversionRepository repository) {
+    boolean isAtHead() {
+      return copy.isAtHead(repository);
+    }
+
+    String describeRevision() {
+      return isAtHead()
+          ? directory.getName() + " is at HEAD (r" + copy.getRevision() + ")"
+          : directory.getName()
+              + " is at r"
+              + copy.getRevision()
+              + ", repository is at r"
+              + repository.getRevision();
+    }
+  }
+
+  private static Project open(File directory) throws SubversionException {
+    var copy = workingCopy(directory);
+    if (!copy.exists() && migrate(directory)) {
+      copy = workingCopy(directory);
+    }
+    if (!copy.exists()) {
+      return null;
+    }
+
+    return new Project(directory, copy, repository(copy.getUrl()));
+  }
+
+  private static Project checkProject(File project) {
     try {
-      var copy = workingCopy(project);
-      if (!copy.exists() && migrate(project)) {
-        copy = workingCopy(project);
-      }
-      if (!copy.exists()) {
+      var opened = open(project);
+      if (opened == null) {
         RequestLogger.printLine(
             project.getPath()
                 + " selected for repository operation but may not have corresponding remote");
         return null;
       }
 
-      var repository = repository(copy.getUrl());
-      if (copy.isAtHead(repository)) {
-        RequestLogger.printLine(project.getName() + " is at HEAD (r" + copy.getRevision() + ")");
-        return null;
-      }
-
-      RequestLogger.printLine(
-          project.getName()
-              + " is at r"
-              + copy.getRevision()
-              + ", repository is at r"
-              + repository.getRevision());
-      return project;
+      RequestLogger.printLine(opened.describeRevision());
+      return opened.isAtHead() ? null : opened;
     } catch (SubversionException e) {
       RequestLogger.printLine(project.getName() + " not checked - exception: " + e.getMessage());
       return null;
@@ -230,8 +233,8 @@ public class SVNManager extends ScriptManager {
 
   public static boolean WCAtHead(File f, boolean quiet) {
     try {
-      var copy = workingCopy(f);
-      if (!copy.exists()) {
+      var opened = open(f);
+      if (opened == null) {
         if (!quiet) {
           RequestLogger.printLine(
               f.getPath()
@@ -240,19 +243,10 @@ public class SVNManager extends ScriptManager {
         return false;
       }
 
-      var repository = repository(copy.getUrl());
-      var atHead = copy.isAtHead(repository);
       if (!quiet) {
-        RequestLogger.printLine(
-            atHead
-                ? f.getName() + " is at HEAD (r" + copy.getRevision() + ")"
-                : f.getName()
-                    + " is at r"
-                    + copy.getRevision()
-                    + ", repository is at r"
-                    + repository.getRevision());
+        RequestLogger.printLine(opened.describeRevision());
       }
-      return atHead;
+      return opened.isAtHead();
     } catch (SubversionException e) {
       error(e, null);
       return true;
@@ -288,29 +282,36 @@ public class SVNManager extends ScriptManager {
     doUpdate(uuid);
   }
 
-  private static void updateProject(File project) {
+  private static void updateProject(File directory) {
     try {
-      var copy = workingCopy(project);
-      if (!copy.exists() && migrate(project)) {
-        copy = workingCopy(project);
-      }
-      if (!copy.exists()) {
-        RequestLogger.printLine(project.getName() + " is not a working copy.");
+      var opened = open(directory);
+      if (opened == null) {
+        RequestLogger.printLine(directory.getName() + " is not a working copy.");
         return;
       }
+      updateProject(opened);
+    } catch (SubversionException e) {
+      error(e, "SVN ERROR during update operation.  Aborting...");
+    }
+  }
 
-      var repository = repository(copy.getUrl());
+  private static void updateProject(Project project) {
+    var directory = project.directory();
+    var copy = project.copy();
+
+    try {
       var from = copy.getRevision();
-      var changes = copy.update(repository);
+      var changes = copy.update(project.repository());
 
       RequestLogger.printLine(
           changes.isEmpty()
-              ? project.getName() + " is at HEAD (r" + copy.getRevision() + ")"
-              : project.getName() + " updated to r" + copy.getRevision() + ".");
+              ? directory.getName() + " is at HEAD (r" + copy.getRevision() + ")"
+              : directory.getName() + " updated to r" + copy.getRevision() + ".");
 
-      record(project, changes);
+      record(directory, changes);
       if (!changes.isEmpty() && from != copy.getRevision()) {
-        updateMessages.put(project, new long[] {from, copy.getRevision()});
+        updateMessages.put(directory, new RevisionRange(from, copy.getRevision()));
+        updateRepositories.put(directory, project.repository());
       }
     } catch (SubversionException e) {
       error(e, "SVN ERROR during update operation.  Aborting...");
@@ -355,19 +356,15 @@ public class SVNManager extends ScriptManager {
   }
 
   static boolean validateRepo(SubversionRepository repository) {
-    return validateRepo(repository, false);
-  }
-
-  private static boolean validateRepo(SubversionRepository repository, boolean quiet) {
     List<SubversionRepository.Entry> entries;
     try {
       entries = repository.list("", repository.getRevision());
     } catch (SubversionException e) {
-      if (!quiet) error(e, "Something went wrong while fetching svn directory info");
+      error(e, "Something went wrong while fetching svn directory info");
       return true;
     }
 
-    if (!quiet) RequestLogger.printLine("Validating repo...");
+    RequestLogger.printLine("Validating repo...");
 
     var failed = false;
     for (var entry : entries) {
@@ -378,11 +375,11 @@ public class SVNManager extends ScriptManager {
       }
     }
 
-    if (failed && !quiet) {
+    if (failed) {
       KoLmafia.updateDisplay(
           MafiaState.ERROR,
           "The requested repo (" + repository.getLocation().getPath() + ") failed validation.");
-    } else if (!quiet) {
+    } else {
       RequestLogger.printLine("Repo validated.");
     }
 
@@ -584,17 +581,18 @@ public class SVNManager extends ScriptManager {
 
   private static void showCommitMessages() {
     for (var entry : updateMessages.entrySet()) {
-      var revisions = entry.getValue();
-      if (revisions[0] <= 0 || revisions[0] >= revisions[1]) {
+      var range = entry.getValue();
+      if (range.from() <= 0 || range.from() >= range.to()) {
         continue;
       }
+
+      var repository = updateRepositories.get(entry.getKey());
+      if (repository == null) continue;
 
       RequestLogger.printHtml("Update log for <b>" + entry.getKey().getName() + "</b>:");
       RequestLogger.printLine("------");
       try {
-        var copy = workingCopy(entry.getKey());
-        var repository = repository(copy.getUrl());
-        for (var log : repository.log(revisions[0] + 1, revisions[1])) {
+        for (var log : repository.log(range.from() + 1, range.to())) {
           RequestLogger.printLine("r" + log.revision() + " by " + log.author());
           if (log.message() != null) RequestLogger.printLine(log.message());
           RequestLogger.printLine("------");
@@ -604,6 +602,7 @@ public class SVNManager extends ScriptManager {
       }
     }
     updateMessages.clear();
+    updateRepositories.clear();
   }
 
   public record Info(
@@ -793,9 +792,9 @@ public class SVNManager extends ScriptManager {
   public static void syncAll() {
     if (!KoLmafia.permitsContinue()) return;
 
-    File[] projects = KoLConstants.SVN_LOCATION.listFiles();
+    var projects = installedProjects();
 
-    if (projects == null || projects.length == 0) {
+    if (projects.isEmpty()) {
       return;
     }
 
@@ -805,8 +804,6 @@ public class SVNManager extends ScriptManager {
 
     var pushed = 0;
     for (File project : projects) {
-      if (project.getName().startsWith(".")) continue;
-
       try {
         var copy = workingCopy(project);
         if (!copy.exists()) continue;
@@ -840,6 +837,8 @@ public class SVNManager extends ScriptManager {
   }
 
   private static boolean differs(File left, File right) {
+    if (left.length() != right.length()) return true;
+
     try {
       return Files.mismatch(left.toPath(), right.toPath()) != -1L;
     } catch (IOException e) {
@@ -873,12 +872,8 @@ public class SVNManager extends ScriptManager {
   private static void checkDependencies() {
     if (!KoLmafia.permitsContinue()) return;
 
-    File[] projects = KoLConstants.SVN_LOCATION.listFiles();
+    var projects = installedProjects();
     boolean printInstall = true;
-
-    if (projects == null || projects.length == 0) {
-      return;
-    }
 
     for (File f : projects) {
       File dep = new File(f, DEPENDENCIES);
@@ -908,9 +903,5 @@ public class SVNManager extends ScriptManager {
 
   public static String getRepoId(String repoUrl) throws SubversionException {
     return getFolderUUID(URI.create(repoUrl));
-  }
-
-  public static Map<File, long[]> getUpdateMessages() {
-    return Map.copyOf(updateMessages);
   }
 }
