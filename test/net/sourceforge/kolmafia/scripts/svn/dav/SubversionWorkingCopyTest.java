@@ -12,6 +12,7 @@ import internal.network.FakeHttpClientBuilder;
 import internal.network.FakeHttpResponse;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -39,10 +40,10 @@ public class SubversionWorkingCopyTest {
   private long headRevision = 38;
 
   private final FakeHttpClientBuilder builder = new FakeHttpClientBuilder();
-  private HttpUtilities.ClientFactory previous;
+  private HttpClient.Builder previous;
 
   private void useOwnClient() {
-    previous = HttpUtilities::getClientBuilder;
+    previous = HttpUtilities.getClientBuilder();
     HttpUtilities.setClientBuilder(() -> builder);
     SubversionRepository.resetClient();
   }
@@ -50,7 +51,7 @@ public class SubversionWorkingCopyTest {
   @AfterEach
   public void restoreClient() {
     builder.client.clear();
-    if (previous != null) HttpUtilities.setClientBuilder(previous);
+    if (previous != null) HttpUtilities.setClientBuilder(() -> previous);
     SubversionRepository.resetClient();
   }
 

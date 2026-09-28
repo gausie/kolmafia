@@ -78,21 +78,55 @@ public class SubversionMigrationTest {
 
   @Nested
   class RecoveringTheUrl {
-    @Test
-    public void readsTheUrlOutOfAWorkingCopyDatabase() throws IOException {
-      var project = legacyProject("rlbond86-mafia-scripts-auto_mushroom-trunk");
+    private Path databaseFor(String name, String body) throws IOException {
+      var project = legacyProject(name);
       Files.write(
           project.resolve(".svn/wc.db"),
-          ("SQLite format 3\u0000"
-                  + "https://svn.code.sf.net/p/rlbond86-mafia-scripts/code"
-                  + "\u0000auto_mushroom/trunk\u0000")
-              .getBytes(StandardCharsets.ISO_8859_1));
+          ("SQLite format 3\u0000" + body).getBytes(StandardCharsets.ISO_8859_1));
+      return project;
+    }
+
+    @Test
+    public void readsTheUrlOutOfAWorkingCopyDatabase() throws IOException {
+      var project =
+          databaseFor(
+              "rlbond86-mafia-scripts-auto_mushroom-trunk",
+              "https://svn.code.sf.net/p/rlbond86-mafia-scripts/code"
+                  + "\u0000auto_mushroom/trunk\u0000");
+
+      var url = SubversionMigration.urlFor(project.toFile());
+
+      assertThat(
+          url.orElse(null),
+          is(
+              URI.create(
+                  "https://svn.code.sf.net/p/rlbond86-mafia-scripts/code/auto_mushroom/trunk")));
+    }
+
+    @Test
+    public void usesTheRepositoryRootWhenThatIsWhatWasCheckedOut() throws IOException {
+      var project =
+          databaseFor(
+              "rlbond86-mafia-scripts",
+              "https://svn.code.sf.net/p/rlbond86-mafia-scripts/code"
+                  + "\u0000auto_mushroom/trunk\u0000");
 
       var url = SubversionMigration.urlFor(project.toFile());
 
       assertThat(
           url.orElse(null),
           is(URI.create("https://svn.code.sf.net/p/rlbond86-mafia-scripts/code")));
+    }
+
+    @Test
+    public void givesUpWhenNoPathInTheDatabaseMatchesTheProject() throws IOException {
+      var project =
+          databaseFor(
+              "rlbond86-mafia-scripts-something-else",
+              "https://svn.code.sf.net/p/rlbond86-mafia-scripts/code"
+                  + "\u0000auto_mushroom/trunk\u0000");
+
+      assertThat(SubversionMigration.urlFor(project.toFile()).orElse(null), is(nullValue()));
     }
 
     @Test

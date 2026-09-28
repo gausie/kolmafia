@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import internal.network.FakeHttpClientBuilder;
 import internal.network.FakeHttpResponse;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -31,10 +32,10 @@ public class SubversionRepositoryTest {
   private static final String BC = "/p/rlbond86-mafia-scripts/code/!svn/bc/38/auto_mushroom/trunk";
 
   private final FakeHttpClientBuilder builder = new FakeHttpClientBuilder();
-  private HttpUtilities.ClientFactory previous;
+  private HttpClient.Builder previous;
 
   private void useOwnClient() {
-    previous = HttpUtilities::getClientBuilder;
+    previous = HttpUtilities.getClientBuilder();
     HttpUtilities.setClientBuilder(() -> builder);
     SubversionRepository.resetClient();
   }
@@ -42,7 +43,7 @@ public class SubversionRepositoryTest {
   @AfterEach
   public void restoreClient() {
     builder.client.clear();
-    if (previous != null) HttpUtilities.setClientBuilder(previous);
+    if (previous != null) HttpUtilities.setClientBuilder(() -> previous);
     SubversionRepository.resetClient();
   }
 
@@ -121,6 +122,22 @@ public class SubversionRepositoryTest {
       var e = assertThrows(SubversionException.class, () -> SubversionRepository.at(TRUNK));
       assertThat(e.getMessage(), containsString("404"));
     }
+
+    @Test
+    public void findsRepositoryRootWhenTheCheckoutPathIsEscaped() throws SubversionException {
+      respond(request -> ok(207, html("request/svn/test_svn_location_encoded.xml")));
+      var repo =
+          SubversionRepository.at(
+              URI.create(
+                  "https://svn.code.sf.net/p/eodscascension/code-0/scripts/EoD%20SC%20Ascension"));
+
+      respond(request -> ok(207, html("request/svn/test_svn_list_encoded.xml")));
+      repo.list("", 58);
+
+      assertThat(
+          lastRequest().uri().getRawPath(),
+          is("/p/eodscascension/code-0/!svn/bc/58/scripts/EoD%20SC%20Ascension"));
+    }
   }
 
   @Nested
@@ -173,6 +190,32 @@ public class SubversionRepositoryTest {
               "scripts/EoD SC Ascension/EoDSCDay4.ash",
               "scripts/EoD SC Ascension/Passive Scripts",
               "scripts/EoD SC Ascension/EoDSCJustQuests.ash"));
+    }
+
+    @Test
+    public void listsEntriesWhenTheServerLeavesPunctuationUnescaped() throws SubversionException {
+      respond(request -> ok(207, html("request/svn/test_svn_location_repo_root.xml")));
+      var repo =
+          SubversionRepository.at(URI.create("https://svn.code.sf.net/p/eodscascension/code-0/"));
+
+      respond(request -> ok(207, html("request/svn/test_svn_list_punctuation.xml")));
+      var entries = repo.list("scripts/Bob's Scripts (v2)", 58);
+
+      assertThat(
+          entries.stream().map(SubversionRepository.Entry::path).toList(),
+          contains("scripts/Bob's Scripts (v2)/run.ash", "scripts/Bob's Scripts (v2)/a+b.ash"));
+    }
+
+    @Test
+    public void keepsALiteralPlusInAFileName() throws SubversionException {
+      respond(request -> ok(207, html("request/svn/test_svn_location_repo_root.xml")));
+      var repo =
+          SubversionRepository.at(URI.create("https://svn.code.sf.net/p/eodscascension/code-0/"));
+
+      respond(request -> ok(207, html("request/svn/test_svn_list_punctuation.xml")));
+      var entries = repo.list("scripts/Bob's Scripts (v2)", 58);
+
+      assertThat(entries.getLast().name(), is("a+b.ash"));
     }
 
     @Test

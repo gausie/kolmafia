@@ -1,9 +1,9 @@
 package net.sourceforge.kolmafia.scripts.svn.dav;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -137,13 +137,13 @@ public class SubversionRepository {
     var document = parse(request(target, "PROPFIND", PROPFIND_ENTRIES, "1"));
 
     var entries = new ArrayList<Entry>();
-    var base = trimSlashes(target.getRawPath());
+    var base = trimSlashes(decode(target.getRawPath()));
     for (var response : descendants(document, DAV_NS, "response")) {
       var href = text(response, DAV_NS, "href");
       var prop = successfulProp(response);
       if (href == null || prop == null) continue;
 
-      var trimmed = trimSlashes(href);
+      var trimmed = trimSlashes(decode(href));
       if (trimmed.equals(base)) continue;
       if (!trimmed.startsWith(base + "/")) continue;
 
@@ -157,7 +157,7 @@ public class SubversionRepository {
               : Kind.FILE;
       entries.add(
           new Entry(
-              join(path, decode(trimSlashes(trimmed.substring(base.length())))),
+              join(path, trimSlashes(trimmed.substring(base.length()))),
               kind,
               parseRevision(versionName)));
     }
@@ -231,18 +231,22 @@ public class SubversionRepository {
 
   private URI pinned(String path, long revision) {
     var suffix = join(relativePath, trimSlashes(path));
+    var root = encode(repositoryPath);
     var target =
-        repositoryPath + "/!svn/bc/" + revision + (suffix.isEmpty() ? "" : "/" + encode(suffix));
+        (root.isEmpty() ? "" : "/" + root)
+            + "/!svn/bc/"
+            + revision
+            + (suffix.isEmpty() ? "" : "/" + encode(suffix));
     return URI.create(location.getScheme() + "://" + location.getRawAuthority() + target);
   }
 
   private static String repositoryPath(String href, String relative) {
-    var full = trimSlashes(href);
+    var full = trimSlashes(decode(href));
     var tail = trimSlashes(relative);
     if (tail.isEmpty() || !full.endsWith(tail)) {
-      return "/" + full;
+      return full;
     }
-    return "/" + trimSlashes(full.substring(0, full.length() - tail.length()));
+    return trimSlashes(full.substring(0, full.length() - tail.length()));
   }
 
   private static String join(String left, String right) {
@@ -271,7 +275,26 @@ public class SubversionRepository {
   }
 
   private static String decode(String path) {
-    return URLDecoder.decode(path, StandardCharsets.UTF_8);
+    if (path.indexOf('%') == -1) return path;
+
+    var bytes = new ByteArrayOutputStream();
+    var i = 0;
+    while (i < path.length()) {
+      if (path.charAt(i) == '%' && i + 2 < path.length()) {
+        var high = Character.digit(path.charAt(i + 1), 16);
+        var low = Character.digit(path.charAt(i + 2), 16);
+        if (high >= 0 && low >= 0) {
+          bytes.write(high << 4 | low);
+          i += 3;
+          continue;
+        }
+      }
+
+      var codePoint = path.codePointAt(i);
+      bytes.writeBytes(new String(Character.toChars(codePoint)).getBytes(StandardCharsets.UTF_8));
+      i += Character.charCount(codePoint);
+    }
+    return bytes.toString(StandardCharsets.UTF_8);
   }
 
   private static long parseRevision(String value) throws SubversionException {

@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,12 +14,14 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import net.sourceforge.kolmafia.KoLConstants;
-import net.sourceforge.kolmafia.scripts.ScriptManager;
 import net.sourceforge.kolmafia.scripts.svn.dav.SubversionWorkingCopy;
 
 public class SubversionMigration {
   private static final Pattern URL_IN_DATABASE =
       Pattern.compile("https?://[\\w.-]+(?:/[\\w.~!$&'()*+,;=:@%-]+)+");
+
+  private static final Pattern PATH_IN_DATABASE =
+      Pattern.compile("[\\w.~!$&'()*+,;=@%-]+(?:/[\\w.~!$&'()*+,;=@%-]+)*");
 
   private SubversionMigration() {}
 
@@ -49,10 +52,8 @@ public class SubversionMigration {
         var repo = entry.getString("repo");
         if (repo == null) continue;
 
-        var url = URI.create(repo);
-        var identifier = ScriptManager.getProjectIdentifier(url.getHost(), url.getPath());
-        if (projectName.equals(identifier)) {
-          return Optional.of(url);
+        if (identifies(repo, projectName)) {
+          return Optional.of(URI.create(repo));
         }
       }
     } catch (IOException | RuntimeException e) {
@@ -73,14 +74,32 @@ public class SubversionMigration {
       return Optional.empty();
     }
 
-    var matcher = URL_IN_DATABASE.matcher(new String(bytes, StandardCharsets.ISO_8859_1));
+    var text = new String(bytes, StandardCharsets.ISO_8859_1);
 
-    var longest = "";
-    while (matcher.find()) {
-      if (matcher.group().length() > longest.length()) longest = matcher.group();
+    var urls = URL_IN_DATABASE.matcher(text);
+    var root = "";
+    while (urls.find()) {
+      if (urls.group().length() > root.length()) root = urls.group();
     }
 
-    return longest.isEmpty() ? Optional.empty() : Optional.of(URI.create(longest));
+    if (root.isEmpty()) return Optional.empty();
+    if (identifies(root, project.getName())) return Optional.of(URI.create(root));
+
+    var paths = PATH_IN_DATABASE.matcher(text);
+    while (paths.find()) {
+      var candidate = root + "/" + paths.group();
+      if (identifies(candidate, project.getName())) return Optional.of(URI.create(candidate));
+    }
+
+    return Optional.empty();
+  }
+
+  private static boolean identifies(String url, String projectName) {
+    try {
+      return projectName.equals(SVNManager.getFolderUUIDNoRemote(new URI(url)));
+    } catch (URISyntaxException e) {
+      return false;
+    }
   }
 
   public static void removeLegacyMetadata(File project) throws IOException {

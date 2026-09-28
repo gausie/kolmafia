@@ -3,9 +3,11 @@ package net.sourceforge.kolmafia.scripts.svn;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -35,7 +37,8 @@ public class SVNManager extends ScriptManager {
 
   private record PendingChange(File project, String relpath, ChangeType type) {}
 
-  private static final List<PendingChange> pendingChanges = new ArrayList<>();
+  private static final List<PendingChange> pendingChanges =
+      Collections.synchronizedList(new ArrayList<>());
 
   private record RevisionRange(long from, long to) {}
 
@@ -319,8 +322,10 @@ public class SVNManager extends ScriptManager {
   }
 
   private static void record(File project, List<Change> changes) {
-    for (var change : changes) {
-      pendingChanges.add(new PendingChange(project, change.path(), change.type()));
+    synchronized (pendingChanges) {
+      for (var change : changes) {
+        pendingChanges.add(new PendingChange(project, change.path(), change.type()));
+      }
     }
   }
 
@@ -371,7 +376,7 @@ public class SVNManager extends ScriptManager {
       if (entry.isDirectory()) {
         failed |= !permissibles.contains(entry.name());
       } else {
-        failed = !entry.name().equals(DEPENDENCIES);
+        failed |= !entry.name().equals(DEPENDENCIES);
       }
     }
 
@@ -671,7 +676,11 @@ public class SVNManager extends ScriptManager {
   }
 
   public static String getFolderUUIDNoRemote(URI repo) {
-    return getProjectIdentifier(repo.getHost(), repo.getPath());
+    var host = repo.getHost();
+    var path = repo.getPath();
+    if (host == null || path == null || path.length() < 2) return null;
+
+    return getProjectIdentifier(host, path);
   }
 
   static File doDirSetup(String uuid) {
@@ -902,6 +911,18 @@ public class SVNManager extends ScriptManager {
   }
 
   public static String getRepoId(String repoUrl) throws SubversionException {
-    return getFolderUUID(URI.create(repoUrl));
+    URI repo;
+    try {
+      repo = new URI(repoUrl);
+    } catch (URISyntaxException e) {
+      throw new SubversionException("Invalid SVN URL: " + repoUrl, e);
+    }
+
+    var id = getFolderUUID(repo);
+    if (id == null) {
+      throw new SubversionException("Could not identify the project at " + repoUrl);
+    }
+
+    return id;
   }
 }
