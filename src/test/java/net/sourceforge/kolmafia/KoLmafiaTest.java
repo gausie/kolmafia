@@ -28,9 +28,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import internal.helpers.Cleanups;
 import internal.network.FakeHttpClientBuilder;
 import internal.network.FakeHttpResponse;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import net.sourceforge.kolmafia.equipment.Slot;
 import net.sourceforge.kolmafia.listener.PreferenceListenerRegistry;
 import net.sourceforge.kolmafia.objectpool.ItemPool;
@@ -342,6 +346,21 @@ public class KoLmafiaTest {
         assertThat(adventures, hasSize(1));
         assertPostRequest(adventures.get(0), "/adventure.php", containsString("snarfblat=112"));
       }
+    }
+  }
+
+  @Nested
+  class MinimumJavaVersion {
+    @Test
+    public void matchesGradleJavaCompatibility() throws IOException {
+      var properties = new Properties();
+      try (var in = Files.newInputStream(Path.of("../../../gradle.properties"))) {
+        properties.load(in);
+      }
+
+      var version = String.valueOf(KoLmafia.UPCOMING_MINIMUM_JAVA_VERSION);
+      assertThat(properties.getProperty("javaSourceCompatibility"), equalTo(version));
+      assertThat(properties.getProperty("javaTargetCompatibility"), equalTo(version));
     }
   }
 }
